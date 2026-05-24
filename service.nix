@@ -10,6 +10,11 @@ let
   service-name = "resonite-headless";
   cfg = config.services.${service-name};
 
+  rml = pkgs.fetchzip {
+    url = "https://github.com/resonite-modding-group/ResoniteModLoader/releases/download/5.0.1/ResoniteModLoader.zip";
+    sha256 = "0000000000000000000000000000000000000000000000000000";
+  };
+
   init-script-name = "${service-name}-update-and-start";
 
   runtime-directory = "/run/${service-name}";
@@ -25,7 +30,14 @@ let
         ${pkgs.patchelf}/bin/patchelf --set-rpath "${pkgs.libpng}/lib:${pkgs.zlib}/lib:${pkgs.bzip2}/lib" $file
     done
 
-    exec ${pkgs.dotnetCorePackages.dotnet_10.runtime}/bin/dotnet ${runtime-directory}/Headless/Resonite.dll -HeadlessConfig /etc/${etc-config-file-path}
+    ${(if cfg.enable-rml then "cp -r ${rml}/* ${headless-directory}/" else "")}
+
+    # Loop through and copy each path securely
+    ${lib.concatMapStringsSep "\n" (p: ''
+      echo "Copying ${toString p} to ${headless-directory}/rml_mods/..."
+      cp -R "${toString p}" "${headless-directory}/rml_mods/"
+    '') cfg.rml-mods}
+    exec ${pkgs.dotnetCorePackages.dotnet_10.runtime}/bin/dotnet ${headless-directory}/Resonite.dll -HeadlessConfig /etc/${etc-config-file-path} ${(if cfg.enable-rml then "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll" else "")}
   '';
 in
 {
@@ -88,6 +100,22 @@ in
       type = lib.types.attrs;
       description = ''
         The Config.json layout for the headless.
+      '';
+    };
+
+    enable-rml = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Whether to enable ResoniteModLoader.
+      '';
+    };
+
+    rml-mods = lib.mkOption {
+      type = lib.types.listOf lib.types.path;
+      default = [ ];
+      description = ''
+        A list of ResoniteModLoader mod paths to install.
       '';
     };
   };
