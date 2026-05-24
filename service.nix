@@ -1,8 +1,6 @@
 inputs@{
   config,
   lib,
-  systemdUtils,
-  nixpkgs,
   pkgs,
   writeShellScriptBin,
   ...
