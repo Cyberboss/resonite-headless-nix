@@ -45,13 +45,7 @@ in
 {
   ##### interface. here we define the options that users of our service can specify
   options.services.${service-name} = {
-    enable = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = ''
-        Whether to enable ${service-name}.
-      '';
-    };
+    enable = lib.mkEnableOption "";
 
     username = lib.mkOption {
       type = lib.types.nonEmptyStr;
