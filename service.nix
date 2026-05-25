@@ -19,7 +19,7 @@ let
 
   init-script-name = "${service-name}-update-and-start";
 
-  runtime-directory = "/run/${service-name}";
+  runtime-directory = "${cfg.home-directory}/depot";
   headless-directory = "${runtime-directory}/Headless";
 
   config-filename = "config.json";
@@ -151,7 +151,6 @@ in
         NotifyAccess = "all";
         ExecStart = "${init-script}/bin/${init-script-name}";
         #Restart = "always";
-        RuntimeDirectory = service-name;
         LogsDirectory = service-name;
       };
       wantedBy = [ "multi-user.target" ];
