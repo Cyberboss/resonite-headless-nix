@@ -11,7 +11,7 @@ let
 
   rml = pkgs.fetchzip {
     url = "https://github.com/resonite-modding-group/ResoniteModLoader/releases/download/5.0.1/ResoniteModLoader.zip";
-    sha256 = "0000000000000000000000000000000000000000000000000000";
+    sha256 = "sha256-QQAyaRYLooL/ArAvLPI/Dx7eA+6hI2ogEw9GYmYQDgQ=";
     stripRoot = false;
   };
 
