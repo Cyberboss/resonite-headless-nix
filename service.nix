@@ -145,7 +145,7 @@ in
       description = service-name;
       serviceConfig = {
         User = cfg.username;
-        Type = "simple";
+        Type = "notify";
         NotifyAccess = "all";
         ExecStart = "${init-script}/bin/${init-script-name}";
         #Restart = "always";
