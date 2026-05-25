@@ -138,7 +138,6 @@ in
     systemd.services.resonite-headless = {
       description = service-name;
       serviceConfig = {
-        EnvironmentFile = lib.mkIf (cfg.environmentFile != null) cfg.environmentFile;
         User = cfg.username;
         Type = "simple";
         NotifyAccess = "all";
