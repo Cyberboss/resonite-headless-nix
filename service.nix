@@ -34,7 +34,7 @@ let
     ${pkgs.depotdownloader}/bin/DepotDownloader -username ${cfg.steam-username} -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword ${cfg.headless-code} -dir ${runtime-directory} -validate
 
     ${pkgs.systemd}/bin/systemd-notify --status="Patching binaries..."
-    for dir in ${headless-directory}/runtimes/; do
+    for dir in ${headless-directory}/runtimes/*/; do
       echo "Entering $dir"
       for file in $dir/native/*.so; do
         echo "Patching $file"
