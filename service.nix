@@ -131,7 +131,11 @@ in
       };
     };
 
-    environment.etc."${etc-config-file-path}" = (builtins.toJson cfg.config-json);
+    environment.etc."${etc-config-file-path}" = (builtins.toJson (cfg.config-json // {
+      dataFolder = "${cfg.home-directory}/data";
+      cacheFolder = "${cfg.home-directory}/cache";
+      logsFolder = "/var/log/${cfg.systemd.services.resonite-headless.serviceConfig.LogsDirectory}";
+    }));
 
     systemd.services.resonite-headless = {
       description = service-name;
@@ -143,6 +147,7 @@ in
         ExecStart = "${init-script}/bin/${init-script-name}";
         Restart = "always";
         RuntimeDirectory = service-name;
+        LogsDirectory = service-name;
       };
       wantedBy = [ "multi-user.target" ];
       wants = [ "network-online.target" ];
