@@ -37,7 +37,7 @@ let
         ${pkgs.patchelf}/bin/patchelf --set-rpath "${pkgs.libpng}/lib:${pkgs.zlib}/lib:${pkgs.bzip2}/lib" $file
     done
 
-    ${(if cfg.enable-rml then "${pkgs.systemd}/bin/systemd-notify --status=""Installing ResoniteModLoader...""" else "")}
+    ${(if cfg.enable-rml then "${pkgs.systemd}/bin/systemd-notify --status=\"Installing ResoniteModLoader...\"" else "")}
     ${(if cfg.enable-rml then "cp -r ${rml}/* ${headless-directory}/" else "")}
 
     # Loop through and copy each path securely
