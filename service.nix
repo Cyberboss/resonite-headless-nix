@@ -26,7 +26,7 @@ let
 
   log-directory-path = "/var/log/${service-name}";
 
-  init-script = lib.mkIf cfg.enable pkgs.writeShellScriptBin init-script-name ''
+  init-script = pkgs.writeShellScriptBin init-script-name ''
     ${pkgs.depotdownloader}/bin/DepotDownloader -username ${config.steam-username} -password "${config.steam-password}" -app 2519830 -beta headless -betapassword ${config.headless-code} -dir ${runtime-directory}
 
     for file in ${headless-directory}/runtimes/**/*.so; do
