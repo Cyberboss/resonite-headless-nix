@@ -36,7 +36,7 @@ let
     ${pkgs.systemd}/bin/systemd-notify --status="Patching binaries..."
     for dir in ${headless-directory}/runtimes/*/; do
       echo "Entering $dir"
-      for file in "$($dir)native/*.so"; do
+      for file in "\$\{dir\}native/*.so"; do
         echo "Patching $file"
         ${pkgs.patchelf}/bin/patchelf --set-rpath "${pkgs.libpng}/lib:${pkgs.zlib}/lib:${pkgs.bzip2}/lib" $file
       done
