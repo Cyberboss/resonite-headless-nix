@@ -19,7 +19,8 @@ let
 
   init-script-name = "${service-name}-update-and-start";
 
-  runtime-directory = "${cfg.home-directory}/depot";
+  root-directory = "${cfg.home-directory}/resonite";
+  runtime-directory = "${root-directory}/depot";
   headless-directory = "${runtime-directory}/Headless";
 
   config-filename = "config.json";
@@ -143,8 +144,8 @@ in
     };
 
     environment.etc."${etc-config-file-path}".source = jsonFormat.generate "${service-name}.${config-filename}" (cfg.config-json // {
-      dataFolder = "${cfg.home-directory}/data";
-      cacheFolder = "${cfg.home-directory}/cache";
+      dataFolder = "${root-directory}/data";
+      cacheFolder = "${root-directory}/cache";
       logsFolder = log-directory-path;
     });
 
