@@ -158,6 +158,7 @@ in
         ExecStart = "${init-script}/bin/${init-script-name}";
         #Restart = "always";
         LogsDirectory = service-name;
+        WorkingDirectory = root-directory;
       };
       wantedBy = [ "multi-user.target" ];
       wants = [ "network-online.target" ];
