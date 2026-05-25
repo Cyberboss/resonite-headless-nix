@@ -68,6 +68,7 @@ let
       cp -f "${toString p}" "${headless-directory}/rml_mods/"
     '') cfg.rml-mods}
 
+    cd ${headless-directory}
     ${pkgs.systemd}/bin/systemd-notify --ready --status="Running headless..."
     exec ${pkgs.dotnetCorePackages.dotnet_10.runtime}/bin/dotnet ${headless-directory}/Resonite.dll -HeadlessConfig /etc/${etc-config-file-path} ${(if cfg.enable-rml then "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll" else "")}
   '';
