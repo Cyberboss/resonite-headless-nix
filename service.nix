@@ -36,7 +36,7 @@ let
     ${pkgs.systemd}/bin/systemd-notify --status="Patching binaries..."
     for dir in ${headless-directory}/runtimes/*/; do
       echo "Entering $dir"
-      subdir_glob="$($dir)native/*.so";
+      subdir_glob="$\{dir}native/*.so";
       echo "Globbing $subdir_glob"
       for file in $subdir_glob; do
         echo "Patching $file"
