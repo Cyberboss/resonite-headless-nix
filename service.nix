@@ -50,7 +50,7 @@ let
     # Loop through and copy each path securely
     ${lib.concatMapStringsSep "\n" (p: ''
       echo "Copying ${toString p} to ${headless-directory}/rml_mods/..."
-      cp -R "${toString p}" "${headless-directory}/rml_mods/"
+      cp "${toString p}" "${headless-directory}/rml_mods/"
     '') cfg.rml-mods}
 
     ${pkgs.systemd}/bin/systemd-notify --ready --status="Running headless..."
