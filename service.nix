@@ -53,7 +53,9 @@ let
       fi
       echo "Patching $file"
       chmod 770 $file
+      set +e
       ${patchelf-command} $file
+      set -e
     done
 
     ${(if cfg.enable-rml then "${pkgs.systemd}/bin/systemd-notify --status=\"Installing ResoniteModLoader...\"" else "")}
