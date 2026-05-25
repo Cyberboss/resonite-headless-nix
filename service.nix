@@ -45,12 +45,12 @@ let
     done
 
     ${(if cfg.enable-rml then "${pkgs.systemd}/bin/systemd-notify --status=\"Installing ResoniteModLoader...\"" else "")}
-    ${(if cfg.enable-rml then "cp -r ${rml}/* ${headless-directory}/" else "")}
+    ${(if cfg.enable-rml then "cp -rf ${rml}/* ${headless-directory}/" else "")}
 
     # Loop through and copy each path securely
     ${lib.concatMapStringsSep "\n" (p: ''
       echo "Copying ${toString p} to ${headless-directory}/rml_mods/..."
-      cp "${toString p}" "${headless-directory}/rml_mods/"
+      cp -f "${toString p}" "${headless-directory}/rml_mods/"
     '') cfg.rml-mods}
 
     ${pkgs.systemd}/bin/systemd-notify --ready --status="Running headless..."
