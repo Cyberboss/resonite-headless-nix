@@ -14,12 +14,15 @@ let
     sha256 = "0000000000000000000000000000000000000000000000000000";
   };
 
+  jsonFormat = pkgs.formats.json {};
+
   init-script-name = "${service-name}-update-and-start";
 
   runtime-directory = "/run/${service-name}";
   headless-directory = "${runtime-directory}/Headless";
 
-  etc-config-file-path = "${service-name}.d/Config.json";
+  config-filename = "config.json";
+  etc-config-file-path = "${service-name}.d/${config-filename}";
 
   log-directory-path = "/var/log/${service-name}";
 
@@ -126,11 +129,11 @@ in
       };
     };
 
-    environment.etc."${etc-config-file-path}" = (builtins.toJson (cfg.config-json // {
+    environment.etc."${etc-config-file-path}".source = jsonFormat.generate "${service-name}.${config-filename}" (cfg.config-json // {
       dataFolder = "${cfg.home-directory}/data";
       cacheFolder = "${cfg.home-directory}/cache";
       logsFolder = log-directory-path;
-    }));
+    });
 
     systemd.services.resonite-headless = {
       description = service-name;
