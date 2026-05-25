@@ -28,6 +28,8 @@ let
   log-directory-path = "/var/log/${service-name}";
 
   init-script = pkgs.writeShellScriptBin init-script-name ''
+    set -euxo pipefail
+
     ${pkgs.systemd}/bin/systemd-notify --status="Downloading depot..."
     ${pkgs.depotdownloader}/bin/DepotDownloader -username ${cfg.steam-username} -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword ${cfg.headless-code} -dir ${runtime-directory}
 
