@@ -28,13 +28,16 @@ let
   log-directory-path = "/var/log/${service-name}";
 
   init-script = pkgs.writeShellScriptBin init-script-name ''
+    ${pkgs.systemd}/bin/systemd-notify --status="Downloading depot..."
     ${pkgs.depotdownloader}/bin/DepotDownloader -username ${cfg.steam-username} -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword ${cfg.headless-code} -dir ${runtime-directory}
 
+    ${pkgs.systemd}/bin/systemd-notify --status="Patching binaries..."
     for file in ${headless-directory}/runtimes/**/*.so; do
         echo "Patching $file"
         ${pkgs.patchelf}/bin/patchelf --set-rpath "${pkgs.libpng}/lib:${pkgs.zlib}/lib:${pkgs.bzip2}/lib" $file
     done
 
+    ${(if cfg.enable-rml then "${pkgs.systemd}/bin/systemd-notify --status=""Installing ResoniteModLoader...""" else "")}
     ${(if cfg.enable-rml then "cp -r ${rml}/* ${headless-directory}/" else "")}
 
     # Loop through and copy each path securely
@@ -42,6 +45,8 @@ let
       echo "Copying ${toString p} to ${headless-directory}/rml_mods/..."
       cp -R "${toString p}" "${headless-directory}/rml_mods/"
     '') cfg.rml-mods}
+
+    ${pkgs.systemd}/bin/systemd-notify --ready --status="Running headless..."
     exec ${pkgs.dotnetCorePackages.dotnet_10.runtime}/bin/dotnet ${headless-directory}/Resonite.dll -HeadlessConfig /etc/${etc-config-file-path} ${(if cfg.enable-rml then "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll" else "")}
   '';
 in
@@ -143,7 +148,7 @@ in
         Type = "simple";
         NotifyAccess = "all";
         ExecStart = "${init-script}/bin/${init-script-name}";
-        Restart = "always";
+        #Restart = "always";
         RuntimeDirectory = service-name;
         LogsDirectory = service-name;
       };
