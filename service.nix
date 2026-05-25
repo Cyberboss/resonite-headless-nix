@@ -28,6 +28,7 @@ let
 
   log-directory-path = "/var/log/${service-name}";
 
+  patchelf-command = "${pkgs.patchelf}/bin/patchelf --set-rpath \"${pkgs.libpng}/lib:${pkgs.zlib}/lib:${pkgs.bzip2.out}/lib\"";
   init-script = pkgs.writeShellScriptBin init-script-name ''
     set -euxo pipefail
 
@@ -41,8 +42,14 @@ let
       for file in ''${dir}native/*.so; do
         [ -f "$file" ] || continue  # Skip if it's a literal unexpanded glob
         echo "Patching $file"
-        ${pkgs.patchelf}/bin/patchelf --set-rpath "${pkgs.libpng}/lib:${pkgs.zlib}/lib:${pkgs.bzip2.out}/lib" $file
+        ${patchelf-command} $file
       done
+    done
+
+    for file in ${headless-directory}/RuntimeData/*; do
+      echo "Patching $file"
+      chmod 770 $file
+      ${patchelf-command} $file
     done
 
     ${(if cfg.enable-rml then "${pkgs.systemd}/bin/systemd-notify --status=\"Installing ResoniteModLoader...\"" else "")}
