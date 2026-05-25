@@ -22,6 +22,8 @@ let
 
   etc-config-file-path = "${service-name}.d/Config.json";
 
+  log-directory-path = "/var/log/${service-name}";
+
   init-script = pkgs.writeShellScriptBin init-script-name ''
     ${pkgs.depotdownloader}/bin/DepotDownloader -username ${config.steam-username} -password "${config.steam-password}" -app 2519830 -beta headless -betapassword ${config.headless-code} -dir ${runtime-directory}
 
@@ -99,7 +101,7 @@ in
     config-json = lib.mkOption {
       type = lib.types.attrs;
       description = ''
-        The Config.json layout for the headless.
+        The Config.json layout for the headless. Data and Cache directories are set to the service's home folder. Log directory is in ${log-directory-path}
       '';
     };
 
@@ -115,7 +117,7 @@ in
       type = lib.types.listOf lib.types.path;
       default = [ ];
       description = ''
-        A list of ResoniteModLoader mod paths to install.
+        A list of ResoniteModLoader mod .dll paths to install.
       '';
     };
   };
@@ -134,7 +136,7 @@ in
     environment.etc."${etc-config-file-path}" = (builtins.toJson (cfg.config-json // {
       dataFolder = "${cfg.home-directory}/data";
       cacheFolder = "${cfg.home-directory}/cache";
-      logsFolder = "/var/log/${cfg.systemd.services.resonite-headless.serviceConfig.LogsDirectory}";
+      logsFolder = log-directory-path;
     }));
 
     systemd.services.resonite-headless = {
