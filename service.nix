@@ -27,7 +27,7 @@ let
   log-directory-path = "/var/log/${service-name}";
 
   init-script = pkgs.writeShellScriptBin init-script-name ''
-    ${pkgs.depotdownloader}/bin/DepotDownloader -username ${config.steam-username} -password "${config.steam-password}" -app 2519830 -beta headless -betapassword ${config.headless-code} -dir ${runtime-directory}
+    ${pkgs.depotdownloader}/bin/DepotDownloader -username ${cfg.steam-username} -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword ${cfg.headless-code} -dir ${runtime-directory}
 
     for file in ${headless-directory}/runtimes/**/*.so; do
         echo "Patching $file"
