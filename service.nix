@@ -47,6 +47,10 @@ let
     done
 
     for file in ${headless-directory}/RuntimeData/*; do
+      if [ -d "$file" ]; then
+        echo "Skipping directory: $file"
+        continue
+      fi
       echo "Patching $file"
       chmod 770 $file
       ${patchelf-command} $file
