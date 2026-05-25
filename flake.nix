@@ -3,7 +3,7 @@
 
     inputs = {};
 
-    outputs = { nixpkgs, ... }: {
+    outputs = { ... }: {
         nixosModules = {
             default = { ... }: {
                 imports = [ ./service.nix ];
