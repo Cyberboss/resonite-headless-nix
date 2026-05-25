@@ -34,9 +34,11 @@ let
     ${pkgs.depotdownloader}/bin/DepotDownloader -username ${cfg.steam-username} -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword ${cfg.headless-code} -dir ${runtime-directory}
 
     ${pkgs.systemd}/bin/systemd-notify --status="Patching binaries..."
-    for file in ${headless-directory}/runtimes/**/*.so; do
+    for dir in ${headless-directory}/runtimes; do
+      for file in $dir/native/*.so; do
         echo "Patching $file"
         ${pkgs.patchelf}/bin/patchelf --set-rpath "${pkgs.libpng}/lib:${pkgs.zlib}/lib:${pkgs.bzip2}/lib" $file
+      done
     done
 
     ${(if cfg.enable-rml then "${pkgs.systemd}/bin/systemd-notify --status=\"Installing ResoniteModLoader...\"" else "")}
