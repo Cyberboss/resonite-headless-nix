@@ -41,7 +41,7 @@ let
       for file in ''${dir}native/*.so; do
         [ -f "$file" ] || continue  # Skip if it's a literal unexpanded glob
         echo "Patching $file"
-        ${pkgs.patchelf}/bin/patchelf --set-rpath "${pkgs.libpng}/lib:${pkgs.zlib}/lib:${pkgs.bzip2.lib}/lib" $file
+        ${pkgs.patchelf}/bin/patchelf --set-rpath "${pkgs.libpng}/lib:${pkgs.zlib}/lib:${pkgs.bzip2.out}/lib" $file
       done
     done
 
