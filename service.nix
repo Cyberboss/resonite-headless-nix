@@ -35,8 +35,6 @@ let
   update-check-script = pkgs.writeShellScriptBin update-check ''
     set -euxo pipefail
 
-    ${pkgs.systemd}/bin/systemd-notify --status="Checking manifest..."
-
     mkdir -p ${update-manifest-directory}
 
     set +e
