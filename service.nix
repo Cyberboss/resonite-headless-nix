@@ -55,6 +55,8 @@ let
 
     if ! ${cmp} -s ${update-working-directory}/manifest-pre.txt ${update-working-directory}/manifest-post.txt; then
       echo "Manifest mismatch!"
+      cat ${update-working-directory}/manifest-pre.txt
+      cat ${update-working-directory}/manifest-post.txt
     fi
   '';
 
