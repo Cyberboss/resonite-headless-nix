@@ -43,7 +43,7 @@ let
     cp -f ${runtime-directory}/manifest_* ${update-manifest-directory}/ 2&>1
     set -e
 
-    if ${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ${update-manifest-directory} | grep -q "Got manifest"; then
+    if ${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ${update-manifest-directory} -manifest-only | grep -q "Got manifest"; then
       systemctl restart ${service-name}
     fi
   '';
@@ -59,7 +59,7 @@ let
     cp -f ${runtime-directory}/manifest_*  ${working-manifest-directory}/ 2&>1
     set -e
 
-    if ${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ${working-manifest-directory} | grep -q "Got manifest"; then
+    if ${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ${working-manifest-directory} -manifest-only | grep -q "Got manifest"; then
       ${pkgs.systemd}/bin/systemd-notify --status="Clearing old depot..."
 
       rm -rf ${runtime-directory}
