@@ -21,7 +21,7 @@ let
   runtime-directory = "${root-directory}/depot";
   headless-directory = "${runtime-directory}/Headless";
   working-manifest-directory = "/var/run/${service-name}/manifest";
-  update-manifest-directory = "/var/run/${update-check}/manifest"
+  update-manifest-directory = "/var/run/${update-check}/manifest";
 
   config-filename = "config.json";
   etc-config-file-path = "${service-name}.d/${config-filename}";
