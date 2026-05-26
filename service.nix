@@ -30,6 +30,8 @@ let
 
   log-directory-path = "/var/log/${service-name}";
 
+  cmp = "${pkgs.diffutils}/bin/cmp";
+
   update-check = "${service-name}-update";
 
   patchelf-command = "${pkgs.patchelf}/bin/patchelf --set-rpath \"${pkgs.libpng}/lib:${pkgs.zlib}/lib:${pkgs.bzip2.out}/lib\"";
@@ -51,7 +53,7 @@ let
     ${download-command} ${update-manifest-directory} -manifest-only
     find ${update-manifest-directory} -type f -exec md5sum '{}' + >${update-working-directory}/manifest-post.txt
 
-    if ! cmp -s ${update-working-directory}/manifest-pre.txt ${update-working-directory}/manifest-post.txt; then
+    if ! ${cmp} -s ${update-working-directory}/manifest-pre.txt ${update-working-directory}/manifest-post.txt; then
       echo "Manifest mismatch!"
     fi
   '';
@@ -73,7 +75,7 @@ let
     ${download-command} ${working-manifest-directory} -manifest-only
     find ${working-manifest-directory} -type f -exec md5sum '{}' + >${working-directory}/manifest-post.txt
 
-    if ! cmp -s ${working-directory}/manifest-pre.txt ${working-directory}/manifest-post.txt; then
+    if ! ${cmp} -s ${working-directory}/manifest-pre.txt ${working-directory}/manifest-post.txt; then
       echo "Manifest mismatch!"
       ${pkgs.systemd}/bin/systemd-notify --status="Clearing old depot..."
 
