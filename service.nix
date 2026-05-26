@@ -34,7 +34,7 @@ let
 
   patchelf-command = "${pkgs.patchelf}/bin/patchelf --set-rpath \"${pkgs.libpng}/lib:${pkgs.zlib}/lib:${pkgs.bzip2.out}/lib\"";
 
-  download-command = "${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ";
+  download-command = "${pkgs.depotdownloader}/bin/DepotDownloader -username \"${cfg.steam-username}\" -password \"${cfg.steam-password}\" -app 2519830 -beta headless -betapassword \"${cfg.headless-code}\" -dir ";
 
   update-check-script = pkgs.writeShellScriptBin update-check ''
     set -euxo pipefail
