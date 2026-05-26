@@ -42,7 +42,7 @@ let
     set -e
 
     if ${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ${update-manifest-directory} -manifest-only | grep -q "Got manifest"; then
-      systemctl restart ${service-name}
+      echo "Should update" > /should_update.txt
     fi
   '';
 
@@ -233,7 +233,6 @@ in
           serviceConfig = {
             Type = "oneshot";
             ExecStart = "${update-check-script}/bin/${update-check}";
-            User = "root";
             RuntimeDirectory = update-check;
           };
         };  
