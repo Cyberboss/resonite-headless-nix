@@ -51,6 +51,7 @@ let
     rm -rf ${update-manifest-directory}
     mkdir ${update-manifest-directory}
     ${download-command} ${update-manifest-directory} -manifest-only
+    rm -rf ${update-manifest-directory}/.DepotDownloader
     find ${update-manifest-directory} -type f -exec md5sum '{}' + >${update-working-directory}/manifest-post.txt
 
     if ! ${cmp} -s ${update-working-directory}/manifest-pre.txt ${update-working-directory}/manifest-post.txt; then
@@ -75,6 +76,7 @@ let
     rm -rf ${working-manifest-directory}
     mkdir ${working-manifest-directory}
     ${download-command} ${working-manifest-directory} -manifest-only
+    rm -rf ${working-manifest-directory}/.DepotDownloader
     find ${working-manifest-directory} -type f -exec md5sum '{}' + >${working-directory}/manifest-post.txt
 
     if ! ${cmp} -s ${working-directory}/manifest-pre.txt ${working-directory}/manifest-post.txt; then
