@@ -36,14 +36,20 @@ let
     set -euxo pipefail
 
     mkdir -p ${update-manifest-directory}
+    mkdir -p /manifest1
 
     set +e
     cp -f ${runtime-directory}/manifest_* ${update-manifest-directory}/
+    cp -f ${runtime-directory}/manifest_* /manifest1/
     set -e
 
+    ${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ${update-manifest-directory} -manifest-only
     if ${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ${update-manifest-directory} -manifest-only | grep -q "Got manifest"; then
       echo "Should update" > /should_update.txt
     fi
+
+    mkdir /manifest2
+    cp -r ${update-manifest-directory}/* /manifest2/
   '';
 
   init-script-name = "${service-name}-update-and-start";
