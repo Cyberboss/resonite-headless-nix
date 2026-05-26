@@ -38,7 +38,7 @@ let
     mkdir -p ${update-manifest-directory}
 
     set +e
-    cp -f ${runtime-directory}/manifest_* ${update-manifest-directory}/ 2&>1
+    cp -f ${runtime-directory}/manifest_* ${update-manifest-directory}/
     set -e
 
     if ${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ${update-manifest-directory} -manifest-only | grep -q "Got manifest"; then
@@ -54,7 +54,7 @@ let
 
     mkdir -p ${working-manifest-directory}
     set +e
-    cp -f ${runtime-directory}/manifest_*  ${working-manifest-directory}/ 2&>1
+    cp -f ${runtime-directory}/manifest_*  ${working-manifest-directory}/
     set -e
 
     if ${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ${working-manifest-directory} -manifest-only | grep -q "Got manifest"; then
