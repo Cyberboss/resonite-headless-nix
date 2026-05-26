@@ -34,6 +34,7 @@ let
 
     ${pkgs.systemd}/bin/systemd-notify --status="Downloading depot..."
     ${pkgs.depotdownloader}/bin/DepotDownloader -username ${cfg.steam-username} -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword ${cfg.headless-code} -dir ${runtime-directory}
+    ${pkgs.systemd}/bin/systemd-notify --status="Validating depot..."
     ${pkgs.depotdownloader}/bin/DepotDownloader -username ${cfg.steam-username} -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword ${cfg.headless-code} -dir ${runtime-directory} -validate
 
     ${pkgs.systemd}/bin/systemd-notify --status="Patching binaries..."
