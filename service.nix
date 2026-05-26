@@ -17,51 +17,78 @@ let
 
   jsonFormat = pkgs.formats.json {};
 
-  init-script-name = "${service-name}-update-and-start";
-
   root-directory = "${cfg.home-directory}/resonite";
   runtime-directory = "${root-directory}/depot";
   headless-directory = "${runtime-directory}/Headless";
+  working-manifest-directory = "/var/run/${service-name}/manifest";
 
   config-filename = "config.json";
   etc-config-file-path = "${service-name}.d/${config-filename}";
 
   log-directory-path = "/var/log/${service-name}";
 
+  update-check = "${service-name}-update";
+
   patchelf-command = "${pkgs.patchelf}/bin/patchelf --set-rpath \"${pkgs.libpng}/lib:${pkgs.zlib}/lib:${pkgs.bzip2.out}/lib\"";
+
+  update-check-script = pkgs.writeShellScriptBin update-check ''
+    set -euxo pipefail
+
+    ${pkgs.systemd}/bin/systemd-notify --status="Checking manifest..."
+
+    set +e
+    cp -f ${runtime-directory}/manifest_* ${working-manifest-directory}/ 2&>1
+    set -e
+
+    if ${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ${working-manifest-directory} | grep -q "Got manifest"; then
+      systemctl restart ${service-name}
+    fi
+  '';
+
+  init-script-name = "${service-name}-update-and-start";
   init-script = pkgs.writeShellScriptBin init-script-name ''
     set -euxo pipefail
 
-    ${pkgs.systemd}/bin/systemd-notify --status="Downloading depot..."
-    ${pkgs.depotdownloader}/bin/DepotDownloader -username ${cfg.steam-username} -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword ${cfg.headless-code} -dir ${runtime-directory}
-    ${pkgs.systemd}/bin/systemd-notify --status="Validating depot..."
-    ${pkgs.depotdownloader}/bin/DepotDownloader -username ${cfg.steam-username} -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword ${cfg.headless-code} -dir ${runtime-directory} -validate
+    ${pkgs.systemd}/bin/systemd-notify --status="Checking manifest..."
 
-    ${pkgs.systemd}/bin/systemd-notify --status="Patching binaries..."
-    
-    for dir in ${headless-directory}/runtimes/*/; do
-      echo "Entering $dir"
-      for file in ''${dir}native/*.so; do
-        [ -f "$file" ] || continue  # Skip if it's a literal unexpanded glob
-        echo "Patching $file"
-        ${patchelf-command} $file
+    set +e
+    cp -f ${runtime-directory}/manifest_* ${working-manifest-directory}/ 2&>1
+    set -e
+
+    if ${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ${working-manifest-directory} | grep -q "Got manifest"; then
+      ${pkgs.systemd}/bin/systemd-notify --status="Clearing old depot..."
+
+      rm -rf ${runtime-directory}
+      ${pkgs.systemd}/bin/systemd-notify --status="Downloading new depot..."
+      ${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ${runtime-directory}
+
+      ${pkgs.systemd}/bin/systemd-notify --status="Patching binaries..."
+      for dir in ${headless-directory}/runtimes/*/; do
+        echo "Entering $dir"
+        for file in ''${dir}native/*.so; do
+          [ -f "$file" ] || continue  # Skip if it's a literal unexpanded glob
+          echo "Patching $file"
+          ${patchelf-command} $file
+        done
       done
-    done
 
-    for file in ${headless-directory}/RuntimeData/*; do
-      if [ -d "$file" ]; then
-        echo "Skipping directory: $file"
-        continue
-      fi
-      echo "Patching $file"
-      chmod 770 $file
-      set +e
-      ${patchelf-command} $file
-      set -e
-    done
+      for file in ${headless-directory}/RuntimeData/*; do
+        if [ -d "$file" ]; then
+          echo "Skipping directory: $file"
+          continue
+        fi
+        echo "Patching $file"
+        chmod 770 $file
+        set +e
+        ${patchelf-command} $file
+        set -e
+      done
 
-    ${(if cfg.enable-rml then "${pkgs.systemd}/bin/systemd-notify --status=\"Installing ResoniteModLoader...\"" else "")}
-    ${(if cfg.enable-rml then "cp -rf ${rml}/* ${headless-directory}/ && chmod 770 ${headless-directory}/rml_mods && chmod 770 ${headless-directory}/rml_libs && chmod -R 770 ${headless-directory}/rml_libs/ && chmod 770 ${headless-directory}/Libraries && chmod -R 770 ${headless-directory}/Libraries/" else "")}
+      ${(if cfg.enable-rml then "${pkgs.systemd}/bin/systemd-notify --status=\"Installing ResoniteModLoader...\"" else "")}
+      ${(if cfg.enable-rml then "cp -rf ${rml}/* ${headless-directory}/ && chmod 770 ${headless-directory}/rml_mods && chmod 770 ${headless-directory}/rml_libs && chmod -R 770 ${headless-directory}/rml_libs/ && chmod 770 ${headless-directory}/Libraries && chmod -R 770 ${headless-directory}/Libraries/" else "")}
+
+      cp ${working-manifest-directory}/* ${runtime-directory}/
+    fi
 
     # Loop through and copy each path securely
     ${lib.concatMapStringsSep "\n" (p: ''
@@ -70,7 +97,7 @@ let
     '') cfg.rml-mods}
 
     cd ${headless-directory}
-    ${pkgs.systemd}/bin/systemd-notify --ready --status="Running headless..."
+    ${pkgs.systemd}/bin/systemd-notify --ready --status="Executing headless..."
     exec ${pkgs.dotnetCorePackages.dotnet_10.runtime}/bin/dotnet ${headless-directory}/Resonite.dll -HeadlessConfig /etc/${etc-config-file-path} ${(if cfg.enable-rml then "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll" else "")}
   '';
 in
@@ -124,6 +151,14 @@ in
       '';
     };
 
+    auto-update-interval = lib.mkOption {
+      type = lib.types.nonEmptyStr;
+      default = "30m";
+      description = ''
+        The systemd timer interval for automatic updates.
+      '';
+    };
+
     config-json = lib.mkOption {
       type = lib.types.attrs;
       description = ''
@@ -165,22 +200,42 @@ in
       logsFolder = log-directory-path;
     });
 
-    systemd.services.resonite-headless = {
-      description = service-name;
-      serviceConfig = {
-        User = cfg.username;
-        Type = "notify";
-        NotifyAccess = "all";
-        ExecStart = "${init-script}/bin/${init-script-name}";
-        #Restart = "always";
-        LogsDirectory = service-name;
-        WorkingDirectory = cfg.home-directory;
+    systemd = {
+      services = {
+        "${service-name}" = {
+          description = service-name;
+          serviceConfig = {
+            User = cfg.username;
+            Type = "notify";
+            NotifyAccess = "all";
+            ExecStart = "${init-script}/bin/${init-script-name}";
+            #Restart = "always";
+            LogsDirectory = service-name;
+            WorkingDirectory = cfg.home-directory;
+            RuntimeDirectory = service-name;
+          };
+          restartTriggers = [ cfg ];
+          wantedBy = [ "multi-user.target" ];
+          wants = [ "network-online.target" ];
+          after = [ "network-online.target" ];
+        };
+        "${update-check}" = {
+          description = "Update check for ${resonite-headless}";
+          serviceConfig = {
+            Type = "oneshot";
+            ExecStart = "${update-check-script}/bin/${update-check}";
+            User = "root";
+            RuntimeDirectory = update-check;
+          };
+        };  
       };
-      wantedBy = [ "multi-user.target" ];
-      wants = [ "network-online.target" ];
-      after = [
-        "network-online.target"
-      ];
+      timers."${update-check}" = {
+        timerConfig = {
+          OnUnitActiveSec = cfg.auto-update-interval;
+          Unit = "${update-check}.service";
+        };
+        wantedBy = [ "timers.target" ];
+      };
     };
   };
 }
