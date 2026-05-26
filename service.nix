@@ -211,6 +211,7 @@ in
             Type = "notify";
             NotifyAccess = "all";
             ExecStart = "${init-script}/bin/${init-script-name}";
+            TimeoutStartSec = "30m";
             #Restart = "always";
             LogsDirectory = service-name;
             WorkingDirectory = cfg.home-directory;
