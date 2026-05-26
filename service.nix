@@ -220,7 +220,7 @@ in
           after = [ "network-online.target" ];
         };
         "${update-check}" = {
-          description = "Update check for ${resonite-headless}";
+          description = "Update check for ${service-name}";
           serviceConfig = {
             Type = "oneshot";
             ExecStart = "${update-check-script}/bin/${update-check}";
