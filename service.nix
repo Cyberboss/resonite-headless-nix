@@ -71,7 +71,7 @@ let
     rm -rf ${working-manifest-directory}
     mkdir ${working-manifest-directory}
     ${download-command} ${working-manifest-directory} -manifest-only
-    find ${update-manifest-directory} -type f -exec md5sum '{}' + >${working-directory}/manifest-post.txt
+    find ${working-manifest-directory} -type f -exec md5sum '{}' + >${working-directory}/manifest-post.txt
 
     if ! cmp -s ${working-directory}/manifest-pre.txt ${working-directory}/manifest-post.txt; then
       echo "Manifest mismatch!"
