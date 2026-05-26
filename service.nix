@@ -58,6 +58,9 @@ let
       echo "Manifest mismatch!"
       cat ${update-working-directory}/manifest-pre.txt
       cat ${update-working-directory}/manifest-post.txt
+
+      echo "Restarting headless!"
+      systemctl restart --no-block ${service-name}
     else
       echo "Up-to-date!"
     fi
