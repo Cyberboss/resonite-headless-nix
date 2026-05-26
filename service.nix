@@ -100,6 +100,12 @@ let
     ${pkgs.systemd}/bin/systemd-notify --ready --status="Executing headless..."
     exec ${pkgs.dotnetCorePackages.dotnet_10.runtime}/bin/dotnet ${headless-directory}/Resonite.dll -HeadlessConfig /etc/${etc-config-file-path} ${(if cfg.enable-rml then "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll" else "")}
   '';
+
+  config-json = jsonFormat.generate "${service-name}.${config-filename}" (cfg.config-json // {
+    dataFolder = "${root-directory}/data";
+    cacheFolder = "${root-directory}/cache";
+    logsFolder = log-directory-path;
+  });
 in
 {
   ##### interface. here we define the options that users of our service can specify
@@ -194,11 +200,7 @@ in
       };
     };
 
-    environment.etc."${etc-config-file-path}".source = jsonFormat.generate "${service-name}.${config-filename}" (cfg.config-json // {
-      dataFolder = "${root-directory}/data";
-      cacheFolder = "${root-directory}/cache";
-      logsFolder = log-directory-path;
-    });
+    environment.etc."${etc-config-file-path}".source = config-json;
 
     systemd = {
       services = {
@@ -214,7 +216,11 @@ in
             WorkingDirectory = cfg.home-directory;
             RuntimeDirectory = service-name;
           };
-          restartTriggers = [ cfg ];
+          restartTriggers = [ 
+            config-json
+            cfg.enable-rml
+            cfg.rml-mods
+          ];
           wantedBy = [ "multi-user.target" ];
           wants = [ "network-online.target" ];
           after = [ "network-online.target" ];
