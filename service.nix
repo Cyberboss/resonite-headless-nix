@@ -47,17 +47,19 @@ let
     cp -f ${runtime-directory}/manifest_* ${update-manifest-directory}/
     set -e
 
-    find ${update-manifest-directory} -type f -exec md5sum '{}' + >${update-working-directory}/manifest-pre.txt
+    find ${update-manifest-directory} -type f -exec md5sum '{}' + | LC_ALL=C sort | md5sum > ${update-working-directory}/manifest-pre.txt
     rm -rf ${update-manifest-directory}
     mkdir ${update-manifest-directory}
     ${download-command} ${update-manifest-directory} -manifest-only
     rm -rf ${update-manifest-directory}/.DepotDownloader
-    find ${update-manifest-directory} -type f -exec md5sum '{}' + >${update-working-directory}/manifest-post.txt
+    find ${update-manifest-directory} -type f -exec md5sum '{}' + | LC_ALL=C sort | md5sum > ${update-working-directory}/manifest-post.txt
 
     if ! ${cmp} -s ${update-working-directory}/manifest-pre.txt ${update-working-directory}/manifest-post.txt; then
       echo "Manifest mismatch!"
       cat ${update-working-directory}/manifest-pre.txt
       cat ${update-working-directory}/manifest-post.txt
+    else
+      echo "Up-to-date!"
     fi
   '';
 
