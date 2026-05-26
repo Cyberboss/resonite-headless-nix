@@ -74,12 +74,12 @@ let
     cp -f ${runtime-directory}/manifest_*  ${working-manifest-directory}/
     set -e
 
-    find ${working-manifest-directory} -type f -exec md5sum '{}' + >${working-directory}/manifest-pre.txt
+    find ${working-manifest-directory} -type f -exec md5sum '{}' + | LC_ALL=C sort | md5sum > ${working-directory}/manifest-pre.txt
     rm -rf ${working-manifest-directory}
     mkdir ${working-manifest-directory}
     ${download-command} ${working-manifest-directory} -manifest-only
     rm -rf ${working-manifest-directory}/.DepotDownloader
-    find ${working-manifest-directory} -type f -exec md5sum '{}' + >${working-directory}/manifest-post.txt
+    find ${working-manifest-directory} -type f -exec md5sum '{}' + | LC_ALL=C sort | md5sum > ${working-directory}/manifest-post.txt
 
     if ! ${cmp} -s ${working-directory}/manifest-pre.txt ${working-directory}/manifest-post.txt; then
       echo "Manifest mismatch!"
