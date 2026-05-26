@@ -20,8 +20,10 @@ let
   root-directory = "${cfg.home-directory}/resonite";
   runtime-directory = "${root-directory}/depot";
   headless-directory = "${runtime-directory}/Headless";
-  working-manifest-directory = "/var/run/${service-name}/manifest";
-  update-manifest-directory = "/var/run/${update-check}/manifest";
+  working-directory = "/var/run/${service-name}";
+  working-manifest-directory = "${working-directory}/manifest";
+  update-working-directory = "/var/run/${update-check}";
+  update-manifest-directory = "${update-working-directory}/manifest";
 
   config-filename = "config.json";
   etc-config-file-path = "${service-name}.d/${config-filename}";
@@ -32,23 +34,26 @@ let
 
   patchelf-command = "${pkgs.patchelf}/bin/patchelf --set-rpath \"${pkgs.libpng}/lib:${pkgs.zlib}/lib:${pkgs.bzip2.out}/lib\"";
 
+  download-command = "${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ";
+
   update-check-script = pkgs.writeShellScriptBin update-check ''
     set -euxo pipefail
 
     mkdir -p ${update-manifest-directory}
-    mkdir -p /manifest1
-
+    
     set +e
     cp -f ${runtime-directory}/manifest_* ${update-manifest-directory}/
-    cp -f ${runtime-directory}/manifest_* /manifest1/
     set -e
 
-    if ${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ${update-manifest-directory} -manifest-only  | tee /test.log | grep -q "Got manifest"; then
-      echo "Should update" > /should_update.txt
-    fi
+    find ${update-manifest-directory} -type f -exec md5sum '{}' + >${update-working-directory}/manifest-pre.txt
+    rm -rf ${update-manifest-directory}
+    mkdir ${update-manifest-directory}
+    ${download-command} ${update-manifest-directory} -manifest-only
+    find ${update-manifest-directory} -type f -exec md5sum '{}' + >${update-working-directory}/manifest-post.txt
 
-    mkdir /manifest2
-    cp -r ${update-manifest-directory}/* /manifest2/
+    if ! cmp -s ${update-working-directory}/manifest-pre.txt ${update-working-directory}/manifest-post.txt; then
+      echo "Manifest mismatch!"
+    fi
   '';
 
   init-script-name = "${service-name}-update-and-start";
@@ -62,12 +67,19 @@ let
     cp -f ${runtime-directory}/manifest_*  ${working-manifest-directory}/
     set -e
 
-    if ${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ${working-manifest-directory} -manifest-only | grep -q "Got manifest"; then
+    find ${working-manifest-directory} -type f -exec md5sum '{}' + >${working-directory}/manifest-pre.txt
+    rm -rf ${working-manifest-directory}
+    mkdir ${working-manifest-directory}
+    ${download-command} ${working-manifest-directory} -manifest-only
+    find ${update-manifest-directory} -type f -exec md5sum '{}' + >${working-directory}/manifest-post.txt
+
+    if ! cmp -s ${working-directory}/manifest-pre.txt ${working-directory}/manifest-post.txt; then
+      echo "Manifest mismatch!"
       ${pkgs.systemd}/bin/systemd-notify --status="Clearing old depot..."
 
       rm -rf ${runtime-directory}
       ${pkgs.systemd}/bin/systemd-notify --status="Downloading new depot..."
-      ${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ${runtime-directory}
+      ${download-command} ${runtime-directory}
 
       ${pkgs.systemd}/bin/systemd-notify --status="Patching binaries..."
       for dir in ${headless-directory}/runtimes/*/; do
