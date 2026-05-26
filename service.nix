@@ -43,8 +43,7 @@ let
     cp -f ${runtime-directory}/manifest_* /manifest1/
     set -e
 
-    ${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ${update-manifest-directory} -manifest-only
-    if ${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ${update-manifest-directory} -manifest-only | grep -q "Got manifest"; then
+    if ${pkgs.depotdownloader}/bin/DepotDownloader -username "${cfg.steam-username}" -password "${cfg.steam-password}" -app 2519830 -beta headless -betapassword "${cfg.headless-code}" -dir ${update-manifest-directory} -manifest-only  | tee /dev/tty | grep -q "Got manifest"; then
       echo "Should update" > /should_update.txt
     fi
 
