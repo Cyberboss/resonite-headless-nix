@@ -232,6 +232,9 @@ in
             ExecStart = "${init-script}/bin/${init-script-name}";
             TimeoutStartSec = "30m";
             Restart = "always";
+            RestartSec="10s";
+            RestartMaxDelaySec="1800s";
+            RestartSteps="100";
             LogsDirectory = service-name;
             WorkingDirectory = cfg.home-directory;
             RuntimeDirectory = service-name;
