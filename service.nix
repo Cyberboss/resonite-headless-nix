@@ -117,8 +117,7 @@ let
       done
 
       ${(if cfg.enable-rml then "${pkgs.systemd}/bin/systemd-notify --status=\"Installing ResoniteModLoader...\"" else "")}
-      ${(if cfg.enable-rml then "cp -rf ${rml}/* ${headless-directory}/ && chmod 770 ${headless-directory}/rml_mods && chmod 770 ${headless-directory}/rml_libs && chmod -R 770 ${headless-directory}/rml_libs/ && chmod 770 ${headless-directory}/Libraries && chmod -R 770 ${headless-directory}/Libraries/" else "")}
-      ${(if cfg.enable-rml then "rm -rf ${headless-directory}/rml_config && ls -s ${rml-config-directory} ${headless-directory}/rml_config" else "")}
+      ${(if cfg.enable-rml then "cp -rf ${rml}/* ${headless-directory}/ && chmod 770 ${headless-directory}/rml_mods && chmod 770 ${headless-directory}/rml_libs && chmod -R 770 ${headless-directory}/rml_libs/ && rm -rf ${headless-directory}/rml_config && mkdir ${headless-directory}/rml_config && chmod -R 770 ${headless-directory}/rml_config/ && chmod 770 ${headless-directory}/Libraries && chmod -R 770 ${headless-directory}/Libraries/" else "")}
 
       cp ${working-manifest-directory}/* ${runtime-directory}/
     fi
@@ -128,6 +127,10 @@ let
       echo "Copying ${toString p} to ${headless-directory}/rml_mods/..."
       cp -f "${toString p}" "${headless-directory}/rml_mods/"
     '') cfg.rml-mods}
+    ${lib.concatMapStringsSep "\n" (p: ''
+      echo "Copying ${toString p} to ${headless-directory}/rml_confg/..."
+      cp -f "${toString p}" "${headless-directory}/rml_confg/"
+    '') cfg.rml-configs}
 
     cd ${headless-directory}
     ${pkgs.systemd}/bin/systemd-notify --ready --status="Executing headless..."
@@ -220,6 +223,14 @@ in
         A list of ResoniteModLoader mod .dll paths to install.
       '';
     };
+
+    rml-configs = lib.mkOption {
+      type = lib.types.listOf lib.types.path;
+      default = [ ];
+      description = ''
+        A list of ResoniteModLoader mod config .json paths to install.
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -233,14 +244,7 @@ in
       };
     };
 
-    environment.etc = {
-      "${etc-config-file-path}".source = config-json;
-      "${rml-config-directory}/.comment" = {
-        user = cfg.username;
-        group = cfg.groupname;
-        text = "Holder for rml_config directory";
-      };
-    };
+    environment.etc"${etc-config-file-path}".source = config-json;
 
     systemd = {
       services = {
