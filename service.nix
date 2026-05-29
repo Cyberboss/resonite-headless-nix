@@ -244,7 +244,7 @@ in
       };
     };
 
-    environment.etc"${etc-config-file-path}".source = config-json;
+    environment.etc."${etc-config-file-path}".source = config-json;
 
     systemd = {
       services = {
