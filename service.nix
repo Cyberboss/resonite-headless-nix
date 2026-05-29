@@ -26,7 +26,9 @@ let
   update-manifest-directory = "${update-working-directory}/manifest";
 
   config-filename = "config.json";
-  etc-config-file-path = "${service-name}.d/${config-filename}";
+  etc-directory = "${service-name}.d";
+  etc-config-file-path = "${etc-directory}/${config-filename}";
+  rml-config-path = "${etc-directory}/rml_config";
 
   log-directory-path = "/var/log/${service-name}";
 
@@ -116,6 +118,7 @@ let
 
       ${(if cfg.enable-rml then "${pkgs.systemd}/bin/systemd-notify --status=\"Installing ResoniteModLoader...\"" else "")}
       ${(if cfg.enable-rml then "cp -rf ${rml}/* ${headless-directory}/ && chmod 770 ${headless-directory}/rml_mods && chmod 770 ${headless-directory}/rml_libs && chmod -R 770 ${headless-directory}/rml_libs/ && chmod 770 ${headless-directory}/Libraries && chmod -R 770 ${headless-directory}/Libraries/" else "")}
+      ${(if cfg.enable-rml then "rm -rf ${headless-directory}/rml_config && ls -s ${rml-config-directory} ${headless-directory}/rml_config" else "")}
 
       cp ${working-manifest-directory}/* ${runtime-directory}/
     fi
@@ -230,7 +233,14 @@ in
       };
     };
 
-    environment.etc."${etc-config-file-path}".source = config-json;
+    environment.etc = {
+      "${etc-config-file-path}".source = config-json;
+      "${rml-config-directory}/.comment" = {
+        user = cfg.username;
+        group = cfg.groupname;
+        text = "Holder for rml_config directory";
+      };
+    };
 
     systemd = {
       services = {
