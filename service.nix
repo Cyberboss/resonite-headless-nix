@@ -197,7 +197,7 @@ in
       type = lib.types.nonEmptyStr;
       default = "30m";
       description = ''
-        The systemd timer interval for automatic updates.
+        The systemd timer interval for automatic updates. See https://www.freedesktop.org/software/systemd/man/latest/systemd.time.html#
       '';
     };
 
@@ -285,6 +285,7 @@ in
       };
       timers."${update-check}" = {
         timerConfig = {
+          OnActiveSec = cfg.auto-update-interval;
           OnUnitActiveSec = cfg.auto-update-interval;
           Unit = "${update-check}.service";
         };
