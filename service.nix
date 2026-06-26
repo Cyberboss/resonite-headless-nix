@@ -260,6 +260,7 @@ in
             RestartSec="10s";
             RestartMaxDelaySec="1800s";
             RestartSteps="100";
+            TimeoutStopSec="15m";
             LogsDirectory = service-name;
             WorkingDirectory = cfg.home-directory;
             RuntimeDirectory = service-name;
