@@ -270,6 +270,7 @@ in
             config-json
             cfg.enable-rml
             cfg.rml-mods
+            cfg.auto-update-interval
           ];
           wantedBy = [ "multi-user.target" ];
           wants = [ "network-online.target" ];
