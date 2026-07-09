@@ -133,7 +133,8 @@ let
     '') cfg.rml-configs}
 
     cd ${headless-directory}
-    ${pkgs.systemd}/bin/systemd-notify --ready --status="Executing headless..."
+    
+    ${(if !cfg.disable-ready-notify then "${pkgs.systemd}/bin/systemd-notify --ready --status=\"Executing headless...\"" else "")}
     exec ${pkgs.dotnetCorePackages.dotnet_10.runtime}/bin/dotnet ${headless-directory}/Resonite.dll -HeadlessConfig /etc/${etc-config-file-path} ${(if cfg.enable-rml then "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll" else "")}
   '';
 
@@ -216,6 +217,14 @@ in
       '';
     };
 
+    disable-ready-notify = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Whether to send the systemd ready notification just prior to starting Resonite. Enabling this flag does NOT change the service type from "notify", if you set it, you should have a mod installed that sends the ready notification from within resonite itself.
+      '';
+    };
+
     rml-mods = lib.mkOption {
       type = lib.types.listOf lib.types.path;
       default = [ ];
@@ -265,6 +274,7 @@ in
             WorkingDirectory = cfg.home-directory;
             RuntimeDirectory = service-name;
             KillSignal = "SIGINT"; # Resonite doesn't respond to SIGTERM and dies immediately
+            WatchdogSignal = "SIGINT";
           };
           restartTriggers = [ 
             config-json
