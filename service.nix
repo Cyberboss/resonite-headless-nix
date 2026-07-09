@@ -271,12 +271,13 @@ in
             RestartMaxDelaySec="1800s";
             RestartSteps="100";
             TimeoutStopSec="15m";
-            TimeoutAbortSec="15m";
+            TimeoutAbortSec="10m";
             LogsDirectory = service-name;
             WorkingDirectory = cfg.home-directory;
             RuntimeDirectory = service-name;
             KillSignal = "SIGINT"; # Resonite doesn't respond to SIGTERM and dies immediately
             WatchdogSignal = "";
+            WatchdogFinalKillSignal = "SIGINT";
           };
           restartTriggers = [ 
             config-json
