@@ -135,6 +135,7 @@ let
     cd ${headless-directory}
     
     ${(if !cfg.disable-ready-notify then "${pkgs.systemd}/bin/systemd-notify --ready --status=\"Executing headless...\"" else "")}
+    ${(if cfg.disable-ready-notify then "${pkgs.systemd}/bin/systemd-notify --status=\"Executing headless...\"" else "")}
     exec ${pkgs.dotnetCorePackages.dotnet_10.runtime}/bin/dotnet ${headless-directory}/Resonite.dll -HeadlessConfig /etc/${etc-config-file-path} ${(if cfg.enable-rml then "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll" else "")}
   '';
 
