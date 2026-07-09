@@ -276,7 +276,7 @@ in
             WorkingDirectory = cfg.home-directory;
             RuntimeDirectory = service-name;
             KillSignal = "SIGINT"; # Resonite doesn't respond to SIGTERM and dies immediately
-            WatchdogSignal = "SIGINT";
+            WatchdogSignal = "";
           };
           restartTriggers = [ 
             config-json
