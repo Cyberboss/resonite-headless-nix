@@ -261,7 +261,7 @@ in
       description = ''
         Path that the specified configuration attrs are copied to as JSON before launch.
       '';
-    }
+    };
   };
 
   config = lib.mkIf cfg.enable {
