@@ -45,9 +45,9 @@ let
 
   update-check = "${service-name}-update";
 
-  patchelf-command = "${pkgs.patchelf}/bin/patchelf --set-rpath \"${pkgs.libpng}/lib:${pkgs.zlib}/lib:${pkgs.bzip2.out}/lib\"";
+  patchelf-command = "${lib.getExe pkgs.patchelf} --set-rpath \"${pkgs.libpng}/lib:${pkgs.zlib}/lib:${pkgs.bzip2.out}/lib\"";
 
-  download-command = "${depotdownloader}/bin/DepotDownloader -app 2519830 -beta headless -dir ";
+  download-command = "${lib.getExe depotdownloader} -app 2519830 -beta headless -dir ";
 
   update-check-script = pkgs.writeShellScriptBin update-check ''
     set -aeuo pipefail
@@ -81,6 +81,8 @@ let
     fi
   '';
 
+  systemd-notify = "${pkgs.systemd}/bin/systemd-notify";
+
   init-script-name = "${service-name}-update-and-start";
   init-script = pkgs.writeShellScriptBin init-script-name ''
     set -aeuo pipefail
@@ -102,7 +104,7 @@ let
     set +a
     set -x
 
-    ${pkgs.systemd}/bin/systemd-notify --status="Checking manifest..."
+    ${systemd-notify} --status="Checking manifest..."
 
     mkdir -p ${working-manifest-directory}
     set +e
@@ -118,13 +120,13 @@ let
 
     if ! ${cmp} -s ${working-directory}/manifest-pre.txt ${working-directory}/manifest-post.txt; then
       echo "Manifest mismatch!"
-      ${pkgs.systemd}/bin/systemd-notify --status="Clearing old depot..."
+      ${systemd-notify} --status="Clearing old depot..."
 
       rm -rf ${runtime-directory}
-      ${pkgs.systemd}/bin/systemd-notify --status="Downloading new depot..."
+      ${systemd-notify} --status="Downloading new depot..."
       ${download-command} ${runtime-directory}
 
-      ${pkgs.systemd}/bin/systemd-notify --status="Patching binaries..."
+      ${systemd-notify} --status="Patching binaries..."
       for dir in ${headless-directory}/runtimes/*/; do
         echo "Entering $dir"
         for file in ''${dir}native/*.so; do
@@ -146,7 +148,7 @@ let
         set -e
       done
 
-      ${(if cfg.enable-rml then "${pkgs.systemd}/bin/systemd-notify --status=\"Installing ResoniteModLoader...\"" else "")}
+      ${(if cfg.enable-rml then "${systemd-notify} --status=\"Installing ResoniteModLoader...\"" else "")}
       ${(if cfg.enable-rml then "cp -rf ${rml}/* ${headless-directory}/ && chmod 770 ${headless-directory}/rml_mods && chmod 770 ${headless-directory}/rml_libs && chmod -R 770 ${headless-directory}/rml_libs/ && rm -rf ${headless-directory}/rml_config && mkdir ${headless-directory}/rml_config && chmod -R 770 ${headless-directory}/rml_config && chmod 770 ${headless-directory}/Libraries && chmod -R 770 ${headless-directory}/Libraries/" else "")}
 
       cp ${working-manifest-directory}/* ${runtime-directory}/
@@ -164,13 +166,13 @@ let
 
     cd ${headless-directory}
     
-    ${(if !cfg.disable-ready-notify then "${pkgs.systemd}/bin/systemd-notify --ready --status=\"Executing headless...\"" else "")}
-    ${(if cfg.disable-ready-notify then "${pkgs.systemd}/bin/systemd-notify --status=\"Executing headless...\"" else "")}
+    ${(if !cfg.disable-ready-notify then "${systemd-notify} --ready --status=\"Executing headless...\"" else "")}
+    ${(if cfg.disable-ready-notify then "${systemd-notify} --status=\"Executing headless...\"" else "")}
     
     cp ${config-json} ${runtime-config-path}
-    ${pkgs.jq} --in-place '. + {loginCredential: \"$RESONITE_USERNAME\", loginPassword: \"$RESONITE_PASSWORD\"}' ${runtime-config-path}
+    ${lib.getExe pkgs.jq} --in-place '. + {loginCredential: \"$RESONITE_USERNAME\", loginPassword: \"$RESONITE_PASSWORD\"}' ${runtime-config-path}
 
-    exec ${pkgs.dotnetCorePackages.dotnet_10.runtime}/bin/dotnet ${headless-directory}/Resonite.dll -HeadlessConfig ${runtime-config-path} ${(if cfg.enable-rml then "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll" else "")}
+    exec ${lib.getExe pkgs.dotnetCorePackages.dotnet_10.runtime} ${headless-directory}/Resonite.dll -HeadlessConfig ${runtime-config-path} ${(if cfg.enable-rml then "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll" else "")}
   '';
 
   config-json = jsonFormat.generate config-filename (cfg.config-json // {
@@ -325,7 +327,7 @@ in
           description = "Update check for ${service-name}";
           serviceConfig = {
             Type = "oneshot";
-            ExecStart = "${update-check-script}/bin/${update-check}";
+            ExecStart = lib.getExe update-check-script;
             RuntimeDirectory = update-check;
           };
         };  
