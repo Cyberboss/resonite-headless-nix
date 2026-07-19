@@ -20,7 +20,7 @@ let
       (pkgs.fetchpatch {
         name = "add-env-var-support.patch";
         url = "https://github.com/Cyberboss/DepotDownloader/commit/0b0a47a3ace04e772ee0861c2228686fe26716bc.patch";
-        hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; 
+        hash = "sha256-CV8ttUnS2Gp7Or5K8RrDtHSVz0jp2+dmQQX6p2uHhTc="; 
       })
     ];
   });
