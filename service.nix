@@ -237,6 +237,14 @@ in
         A list of ResoniteModLoader mod config .json paths to install.
       '';
     };
+
+    additional-restart-triggers = lib.mkOption {
+      type = lib.types.listOf lib.types.anything;
+      default = [ ];
+      description = ''
+        Additional restart triggers for the systemd service
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -280,7 +288,7 @@ in
             cfg.enable-rml
             cfg.rml-mods
             cfg.auto-update-interval
-          ];
+          ] ++ cfg.additional-restart-triggers;
           wantedBy = [ "multi-user.target" ];
           wants = [ "network-online.target" ];
           after = [ "network-online.target" ];
