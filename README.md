@@ -57,14 +57,14 @@ A Nixpkgs reference is, for all intents and purposes, also required.
 
 Sample .env files:
 `depotdownloader.env`
-```sh
+```env
 DEPOT_DOWNLOADER_USERNAME=my_burner_steam_account_with_resonite_added_and_no_steam_guard
 DEPOT_DOWNLOADER_PASSWORD=my_burner_steam_account_password
 DEPOT_DOWNLOADER_BETA_PASSWORD=CurrentResoniteHeadlessCode_SupportYDMSOnStripe!
 ```
 
 `resonite-credentials.env`
-```sh
+```env
 RESONITE_USERNAME="My Resonite Headless Account Username"
 RESONITE_PASSWORD="My Resonite Headless Account Password"
 ```

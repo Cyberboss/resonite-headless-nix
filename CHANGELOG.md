@@ -7,6 +7,10 @@ and this project adheres to Semantic Versioning ([SemVer]).
 
 ## [Unreleased]
 
+### Fixed
+
+- `README.md` formatting. [@Cyberboss]
+
 ## [1.0.3] - 2026-07-19
 
 ### Fixed
