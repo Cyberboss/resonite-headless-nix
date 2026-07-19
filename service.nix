@@ -36,6 +36,7 @@ let
   update-manifest-directory = "${update-working-directory}/manifest";
 
   config-filename = "${service-name}.config.json";
+  runtime-config-path = "${working-directory}/${config-filename}";
   rml-config-path = "${working-directory}/rml_config";
 
   log-directory-path = "/var/log/${service-name}";
@@ -145,22 +146,22 @@ let
     ${(if !cfg.disable-ready-notify then "${pkgs.systemd}/bin/systemd-notify --ready --status=\"Executing headless...\"" else "")}
     ${(if cfg.disable-ready-notify then "${pkgs.systemd}/bin/systemd-notify --status=\"Executing headless...\"" else "")}
     
-    cp ${config-json} ${cfg.runtime-config-path}
-    ${(if cfg.pre-launch-command then cfg.pre-launch-command else "")}
+    cp ${config-json} ${runtime-config-path}
+    env $(cat ${cfg.credentials-file} | xargs) ${pkgs.jq} --in-place '. + {loginCredential: \"$RESONITE_USERNAME\", loginPassword: \"$RESONITE_PASSWORD\"}' ${runtime-config-path}
 
-    exec ${pkgs.dotnetCorePackages.dotnet_10.runtime}/bin/dotnet ${headless-directory}/Resonite.dll -HeadlessConfig ${cfg.runtime-config-path} ${(if cfg.enable-rml then "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll" else "")}
+    exec ${pkgs.dotnetCorePackages.dotnet_10.runtime}/bin/dotnet ${headless-directory}/Resonite.dll -HeadlessConfig ${runtime-config-path} ${(if cfg.enable-rml then "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll" else "")}
   '';
 
   config-json = jsonFormat.generate config-filename (cfg.config-json // {
     dataFolder = "${root-directory}/data";
     cacheFolder = "${root-directory}/cache";
     logsFolder = log-directory-path;
+    loginCredential = null;
+    loginPassword = null;
   });
 in
 {
   options.services.${service-name} = {
-    enable = lib.mkEnableOption "";
-
     username = lib.mkOption {
       type = lib.types.nonEmptyStr;
       default = service-name;
@@ -203,7 +204,14 @@ in
     config-json = lib.mkOption {
       type = lib.types.attrs;
       description = ''
-        The Config.json layout for the headless. Data and Cache directories are set to the service's home folder. Log directory is in ${log-directory-path}. SHOULD NOT contain the headless Resonite account credentials. Use pre-launch-command and runtime-config-path to inject them at runtime.
+        The Config.json layout for the headless. Data and Cache directories are set to the service's home folder. Log directory is in ${log-directory-path}. MUST NOT contain the headless Resonite account credentials. Use credentials-file to inject them at runtime.
+      '';
+    };
+
+    credentials-file = lib.mkOption {
+      type = lib.type.nonEmptyStr;
+      description = ''
+        Path to an environment file containing definitions for RESONITE_USERNAME and RESONITE_PASSWORD
       '';
     };
 
@@ -244,22 +252,6 @@ in
       default = [ ];
       description = ''
         Additional restart triggers for the systemd service
-      '';
-    };
-
-    pre-launch-command = lib.mkOption {
-      type = lib.types.nullOr lib.types.nonEmptyStr;
-      default = null;
-      description = ''
-        Arbitrary shell command to execute before launching resonite. You can use this to inject secrets into the launched resonite configuration specified by runtime-config-path.
-      '';
-    };
-
-    runtime-config-path = lib.mkOption {
-      type = lib.types.nullOr lib.types.nonEmptyStr;
-      default = "${working-directory}/${config-filename}";
-      description = ''
-        Path that the specified configuration attrs are copied to as JSON before launch.
       '';
     };
   };
