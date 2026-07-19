@@ -73,4 +73,4 @@ See a more complete example with mods [here](https://github.com/Cyberboss/cybers
 
 Full options specifcation can be found in [service.nix](./service.nix).
 
-Mods built from source support coming soon: #1
+Mods built from source support coming soon: [#1](https://github.com/Cyberboss/resonite-headless-nix/issues/1)
