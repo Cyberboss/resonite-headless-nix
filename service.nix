@@ -104,7 +104,7 @@ let
     set +a
     set -x
 
-    ${(if cfg.skip-steam then "" else ''
+    ${(if ! cfg.use-steam then "" else ''
     ${systemd-notify} --status="Checking manifest..."
 
     mkdir -p ${working-manifest-directory}
@@ -217,11 +217,11 @@ in
       '';
     };
 
-    skip-steam = lib.mkOption {
+    use-steam = lib.mkOption {
       type = lib.types.bool;
-      default = false;
+      default = true;
       description = ''
-        Skips all Steam processes. Useful in cases where you have the latest binaries but rate limiting is occurring
+        Use Steam processes. Turning this off is useful in cases where you have the latest binaries but rate limiting is occurring
       '';
     };
 
@@ -332,7 +332,7 @@ in
           wants = [ "network-online.target" ];
           after = [ "network-online.target" ];
         };
-        "${update-check}" = lib.mkIf (!cfg.skip-steam) {
+        "${update-check}" = lib.mkIf cfg.use-steam {
           description = "Update check for ${service-name}";
           serviceConfig = {
             Type = "oneshot";
@@ -341,7 +341,7 @@ in
           }
         };
       };
-      timers."${update-check}" = {
+      timers."${update-check}" = lib.mkIf cfg.use-steam {
         timerConfig = {
           OnActiveSec = cfg.auto-update-interval;
           OnUnitActiveSec = cfg.auto-update-interval;
