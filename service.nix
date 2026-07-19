@@ -17,11 +17,11 @@ let
 
   depotdownloader = pkgs.depotdownloader.overrideAttrs (oldAttrs: {
     patches = (oldAttrs.patches or []) ++ [
-      pkgs.fetchpatch {
+      (pkgs.fetchpatch {
         name = "add-env-var-support.patch";
         url = "https://github.com/Cyberboss/DepotDownloader/commit/0b0a47a3ace04e772ee0861c2228686fe26716bc.patch";
         hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; 
-      }
+      })
     ];
   });
 
