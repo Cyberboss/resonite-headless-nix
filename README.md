@@ -18,6 +18,7 @@ Optionally supports [ResoniteModLoader](https://github.com/resonite-modding-grou
 ```
 
 Optionally pin to a semantically versioned tag.
+A Nixpkgs reference is, for all intents and purposes, also required.
 
 `resonite.nix`
 ```nix
