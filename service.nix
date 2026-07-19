@@ -104,6 +104,7 @@ let
     set +a
     set -x
 
+    ${(if cfg.skip-steam then "" else ''
     ${systemd-notify} --status="Checking manifest..."
 
     mkdir -p ${working-manifest-directory}
@@ -153,6 +154,7 @@ let
 
       cp ${working-manifest-directory}/* ${runtime-directory}/
     fi
+    '')}
 
     # Loop through and copy each path securely
     ${lib.concatMapStringsSep "\n" (p: ''
@@ -212,6 +214,14 @@ in
       type = lib.types.nonEmptyStr;
       description = ''
         Path to a file containing the DepotDownloader environment (Currently only supports DEPOT_DOWNLOADER_USERNAME, DEPOT_DOWNLOADER_PASSWORD, and DEPOT_DOWNLOADER_BETA_PASSWORD)
+      '';
+    };
+
+    skip-steam = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Skips all Steam processes. Useful in cases where you have the latest binaries but rate limiting is occurring
       '';
     };
 
@@ -322,7 +332,7 @@ in
           wants = [ "network-online.target" ];
           after = [ "network-online.target" ];
         };
-        "${update-check}" = {
+        "${update-check}" = lib.mkIf !cfg.skip-steam {
           description = "Update check for ${service-name}";
           serviceConfig = {
             Type = "oneshot";
