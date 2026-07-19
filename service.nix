@@ -209,7 +209,7 @@ in
     };
 
     credentials-file = lib.mkOption {
-      type = lib.type.nonEmptyStr;
+      type = lib.types.nonEmptyStr;
       description = ''
         Path to an environment file containing definitions for RESONITE_USERNAME and RESONITE_PASSWORD
       '';
