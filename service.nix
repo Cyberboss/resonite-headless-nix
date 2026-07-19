@@ -100,6 +100,9 @@ let
 
     set -x
 
+    echo "Env set:"
+    printenv | cut -d= -f1
+
     ${pkgs.systemd}/bin/systemd-notify --status="Checking manifest..."
 
     mkdir -p ${working-manifest-directory}
