@@ -1,13 +1,13 @@
 {
-    description = "resonite-headless-nix";
+  description = "resonite-headless-nix";
 
-    inputs = {};
+  inputs = { };
 
-    outputs = { ... }: {
-        nixosModules = {
-            default = { ... }: {
-                imports = [ ./service.nix ];
-            };
-        };
+  outputs = { ... }: {
+    nixosModules = {
+      default = { ... }: {
+        imports = [ ./service.nix ];
+      };
     };
+  };
 }

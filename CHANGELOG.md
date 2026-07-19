@@ -10,6 +10,7 @@ and this project adheres to Semantic Versioning ([SemVer]).
 ### Fixed
 
 - `README.md` formatting. [@Cyberboss]
+- Ran `nixfmt`. [@Cyberboss]
 
 ## [1.0.3] - 2026-07-19
 
