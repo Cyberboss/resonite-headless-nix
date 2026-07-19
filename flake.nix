@@ -4,10 +4,6 @@
   inputs = { };
 
   outputs = { ... }: {
-    nixosModules = {
-      default = { ... }: {
-        imports = [ ./service.nix ];
-      };
-    };
+    nixosModules = { default = { ... }: { imports = [ ./service.nix ]; }; };
   };
 }
