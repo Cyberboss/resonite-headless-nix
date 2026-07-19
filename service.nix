@@ -35,10 +35,8 @@ let
   update-working-directory = "/var/run/${update-check}";
   update-manifest-directory = "${update-working-directory}/manifest";
 
-  config-filename = "config.json";
-  etc-directory = "${service-name}.d";
-  etc-config-file-path = "${etc-directory}/${config-filename}";
-  rml-config-path = "${etc-directory}/rml_config";
+  config-filename = "${service-name}.config.json";
+  rml-config-path = "${working-directory}/rml_config";
 
   log-directory-path = "/var/log/${service-name}";
 
@@ -129,7 +127,6 @@ let
       ${(if cfg.enable-rml then "${pkgs.systemd}/bin/systemd-notify --status=\"Installing ResoniteModLoader...\"" else "")}
       ${(if cfg.enable-rml then "cp -rf ${rml}/* ${headless-directory}/ && chmod 770 ${headless-directory}/rml_mods && chmod 770 ${headless-directory}/rml_libs && chmod -R 770 ${headless-directory}/rml_libs/ && rm -rf ${headless-directory}/rml_config && mkdir ${headless-directory}/rml_config && chmod -R 770 ${headless-directory}/rml_config && chmod 770 ${headless-directory}/Libraries && chmod -R 770 ${headless-directory}/Libraries/" else "")}
 
-      ${(if cfg.pre-launch-command then cfg.pre-launch-command else "")}
       cp ${working-manifest-directory}/* ${runtime-directory}/
     fi
 
@@ -147,17 +144,20 @@ let
     
     ${(if !cfg.disable-ready-notify then "${pkgs.systemd}/bin/systemd-notify --ready --status=\"Executing headless...\"" else "")}
     ${(if cfg.disable-ready-notify then "${pkgs.systemd}/bin/systemd-notify --status=\"Executing headless...\"" else "")}
+    
+    cp ${config-json} ${cfg.runtime-config-path}
+    ${(if cfg.pre-launch-command then cfg.pre-launch-command else "")}
+
     exec ${pkgs.dotnetCorePackages.dotnet_10.runtime}/bin/dotnet ${headless-directory}/Resonite.dll -HeadlessConfig /etc/${etc-config-file-path} ${(if cfg.enable-rml then "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll" else "")}
   '';
 
-  config-json = jsonFormat.generate "${service-name}.${config-filename}" (cfg.config-json // {
+  config-json = jsonFormat.generate config-filename (cfg.config-json // {
     dataFolder = "${root-directory}/data";
     cacheFolder = "${root-directory}/cache";
     logsFolder = log-directory-path;
   });
 in
 {
-  ##### interface. here we define the options that users of our service can specify
   options.services.${service-name} = {
     enable = lib.mkEnableOption "";
 
@@ -203,7 +203,7 @@ in
     config-json = lib.mkOption {
       type = lib.types.attrs;
       description = ''
-        The Config.json layout for the headless. Data and Cache directories are set to the service's home folder. Log directory is in ${log-directory-path}
+        The Config.json layout for the headless. Data and Cache directories are set to the service's home folder. Log directory is in ${log-directory-path}. SHOULD NOT contain the headless Resonite account credentials. Use pre-launch-command and runtime-config-path to inject them at runtime.
       '';
     };
 
@@ -251,9 +251,17 @@ in
       type = lib.types.nullOr lib.types.nonEmptyStr;
       default = null;
       description = ''
-        Arbitrary shell command to execute before launching resonite
+        Arbitrary shell command to execute before launching resonite. You can use this to inject secrets into the launched resonite configuration specified by runtime-config-path.
       '';
     };
+
+    runtime-config-path = lib.mkOption {
+      type = lib.types.nullOr lib.types.nonEmptyStr;
+      default = "${working-directory}/${config-filename}";
+      description = ''
+        Path that the specified configuration attrs are copied to as JSON before launch.
+      '';
+    }
   };
 
   config = lib.mkIf cfg.enable {
@@ -266,8 +274,6 @@ in
         home = cfg.home-directory;
       };
     };
-
-    environment.etc."${etc-config-file-path}".source = config-json;
 
     systemd = {
       services = {
@@ -297,6 +303,7 @@ in
             cfg.enable-rml
             cfg.rml-mods
             cfg.auto-update-interval
+            cfg.pre-launch-command
           ] ++ cfg.additional-restart-triggers;
           wantedBy = [ "multi-user.target" ];
           wants = [ "network-online.target" ];
