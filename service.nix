@@ -171,7 +171,7 @@ let
     ${(if !cfg.disable-ready-notify then "${systemd-notify} --ready --status=\"Executing headless...\"" else "")}
     ${(if cfg.disable-ready-notify then "${systemd-notify} --status=\"Executing headless...\"" else "")}
     
-    ${lib.getExe pkgs.jq} '. + {loginCredential: "$RESONITE_USERNAME", loginPassword: "$RESONITE_PASSWORD"}' ${config-json} > ${runtime-config-path}
+    ${lib.getExe pkgs.jq} --arg user "$RESONITE_USERNAME" --arg pass "$RESONITE_PASSWORD"  '. + {loginCredential: $user, loginPassword: $pass}' ${config-json} > ${runtime-config-path}
 
     exec ${lib.getExe pkgs.dotnetCorePackages.dotnet_10.runtime} ${headless-directory}/Resonite.dll -HeadlessConfig ${runtime-config-path} ${(if cfg.enable-rml then "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll" else "")}
   '';
