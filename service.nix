@@ -148,7 +148,7 @@ let
     cp ${config-json} ${cfg.runtime-config-path}
     ${(if cfg.pre-launch-command then cfg.pre-launch-command else "")}
 
-    exec ${pkgs.dotnetCorePackages.dotnet_10.runtime}/bin/dotnet ${headless-directory}/Resonite.dll -HeadlessConfig ${runtime-config-path} ${(if cfg.enable-rml then "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll" else "")}
+    exec ${pkgs.dotnetCorePackages.dotnet_10.runtime}/bin/dotnet ${headless-directory}/Resonite.dll -HeadlessConfig ${cfg.runtime-config-path} ${(if cfg.enable-rml then "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll" else "")}
   '';
 
   config-json = jsonFormat.generate config-filename (cfg.config-json // {
