@@ -7,6 +7,12 @@ and this project adheres to Semantic Versioning ([SemVer]).
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-07-19
+
+### Fixed
+
+- `CHANGELOG.md` references. [@Cyberboss]
+
 ## [1.0.2] - 2026-07-19
 
 ### Fixed
@@ -25,8 +31,9 @@ and this project adheres to Semantic Versioning ([SemVer]).
 
 - Initial Release. [@Cyberboss]
 
-[unreleased]: https://github.com/olivierlacan/keep-a-changelog/compare/v1.0.2...HEAD
-[1.0.2]: https://github.com/Cyberboss/resonite-headless-nix/compare/v1.0.2...v1.0.2
+[unreleased]: https://github.com/Cyberboss/resonite-headless-nix/compare/v1.0.3...HEAD
+[1.0.3]: https://github.com/Cyberboss/resonite-headless-nix/compare/v1.0.2...v1.0.3
+[1.0.2]: https://github.com/Cyberboss/resonite-headless-nix/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/Cyberboss/resonite-headless-nix/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/Cyberboss/resonite-headless-nix/compare/c2a824e34629f6e9d0938b8eb14d977516aa6197...v1.0.0
 [Keep a Changelog]: https://keepachangelog.com/en/1.1.0
