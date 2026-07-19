@@ -4,10 +4,22 @@ This uses [DepotDownloader](https://github.com/steamre/depotdownloader) and .NET
 
 It runs as a systemd service and automatically updates on a timer.
 
-Optionally supports [ResoniteModLoader]() mods.
+Optionally supports [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoader) mods.
 
 ## Basic example
 
+`flake.nix`
+```nix
+{
+    inputs = {
+        resonite-headless.url = "github:Cyberboss/resonite-headless-nix";
+    };
+}
+```
+
+Optionally pin to a semantically versioned tag.
+
+`resonite.nix`
 ```nix
 { inputs, ... }:
 {
