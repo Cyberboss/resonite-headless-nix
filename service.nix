@@ -332,7 +332,7 @@ in
           wants = [ "network-online.target" ];
           after = [ "network-online.target" ];
         };
-        "${update-check}" = lib.mkIf !cfg.skip-steam {
+        "${update-check}" = lib.mkIf (!cfg.skip-steam) {
           description = "Update check for ${service-name}";
           serviceConfig = {
             Type = "oneshot";
