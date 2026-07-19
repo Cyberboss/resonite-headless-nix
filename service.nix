@@ -50,7 +50,7 @@ let
   download-command = "${depotdownloader}/bin/DepotDownloader -app 2519830 -beta headless -dir ";
 
   update-check-script = pkgs.writeShellScriptBin update-check ''
-    set -aeuxo pipefail
+    set -euxo pipefail
     source ${cfg.depotdownloader-env-file}
     mkdir -p ${update-manifest-directory}
     
@@ -79,7 +79,7 @@ let
 
   init-script-name = "${service-name}-update-and-start";
   init-script = pkgs.writeShellScriptBin init-script-name ''
-    set -aeuxo pipefail
+    set -euxo pipefail
 
     source ${cfg.depotdownloader-env-file}
     source ${cfg.credentials-file}
