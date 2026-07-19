@@ -129,6 +129,7 @@ let
       ${(if cfg.enable-rml then "${pkgs.systemd}/bin/systemd-notify --status=\"Installing ResoniteModLoader...\"" else "")}
       ${(if cfg.enable-rml then "cp -rf ${rml}/* ${headless-directory}/ && chmod 770 ${headless-directory}/rml_mods && chmod 770 ${headless-directory}/rml_libs && chmod -R 770 ${headless-directory}/rml_libs/ && rm -rf ${headless-directory}/rml_config && mkdir ${headless-directory}/rml_config && chmod -R 770 ${headless-directory}/rml_config && chmod 770 ${headless-directory}/Libraries && chmod -R 770 ${headless-directory}/Libraries/" else "")}
 
+      ${(if cfg.pre-launch-command then cfg.pre-launch-command else "")}
       cp ${working-manifest-directory}/* ${runtime-directory}/
     fi
 
@@ -243,6 +244,14 @@ in
       default = [ ];
       description = ''
         Additional restart triggers for the systemd service
+      '';
+    };
+
+    pre-launch-command = lib.mkOption {
+      type = lib.types.nullOr lib.types.nonEmptyStr;
+      default = null;
+      description = ''
+        Arbitrary shell command to execute before launching resonite
       '';
     };
   };
