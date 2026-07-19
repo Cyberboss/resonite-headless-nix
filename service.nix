@@ -97,6 +97,9 @@ let
         echo "ERROR: RESONITE_PASSWORD is required in ${cfg.credentials-file} but missing." >&2
         exit 1
     fi
+    
+    echo "Substituting config from ${config-json} to ${runtime-config-path}"
+    ${lib.getExe pkgs.jq} --arg user "$RESONITE_USERNAME" --arg pass "$RESONITE_PASSWORD"  '. + {loginCredential: $user, loginPassword: $pass}' ${config-json} > ${runtime-config-path}
 
     echo "Sourcing ${cfg.depotdownloader-env-file}"
     source ${cfg.depotdownloader-env-file}
@@ -170,8 +173,6 @@ let
     
     ${(if !cfg.disable-ready-notify then "${systemd-notify} --ready --status=\"Executing headless...\"" else "")}
     ${(if cfg.disable-ready-notify then "${systemd-notify} --status=\"Executing headless...\"" else "")}
-    
-    ${lib.getExe pkgs.jq} --arg user "$RESONITE_USERNAME" --arg pass "$RESONITE_PASSWORD"  '. + {loginCredential: $user, loginPassword: $pass}' ${config-json} > ${runtime-config-path}
 
     exec ${lib.getExe pkgs.dotnetCorePackages.dotnet_10.runtime} ${headless-directory}/Resonite.dll -HeadlessConfig ${runtime-config-path} ${(if cfg.enable-rml then "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll" else "")}
   '';
