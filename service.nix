@@ -295,7 +295,6 @@ in
             cfg.enable-rml
             cfg.rml-mods
             cfg.auto-update-interval
-            cfg.pre-launch-command
           ] ++ cfg.additional-restart-triggers;
           wantedBy = [ "multi-user.target" ];
           wants = [ "network-online.target" ];
