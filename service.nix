@@ -27,9 +27,7 @@ let
   root-directory = "/var/lib/${service-name}";
   runtime-directory = "${root-directory}/depot";
   headless-directory = "${runtime-directory}/Headless";
-  working-directory = "/var/run/${
-      config.systemd.services.${service-name}.serviceConfig.RuntimeDirectory
-    }";
+  working-directory = "/var/run/${service-name}";
   working-manifest-directory = "${working-directory}/manifest";
   update-working-directory = "/var/run/${update-check}";
   update-manifest-directory = "${update-working-directory}/manifest";
