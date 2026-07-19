@@ -338,7 +338,7 @@ in
             Type = "oneshot";
             ExecStart = lib.getExe update-check-script;
             RuntimeDirectory = update-check;
-          }
+          };
         };
       };
       timers."${update-check}" = lib.mkIf cfg.use-steam {
