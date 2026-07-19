@@ -330,6 +330,7 @@ in {
       groups."${cfg.groupname}" = { };
       users."${cfg.username}" = {
         isSystemUser = true;
+        createHome = true;
         group = cfg.groupname;
       };
     };
