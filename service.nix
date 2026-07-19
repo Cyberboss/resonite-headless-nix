@@ -320,7 +320,6 @@ in
             RuntimeDirectory = service-name;
             KillSignal = "SIGINT"; # Resonite doesn't respond to SIGTERM and dies immediately
             WatchdogSignal = "";
-            WatchdogFinalKillSignal = "SIGINT";
           };
           restartTriggers = [ 
             config-json
