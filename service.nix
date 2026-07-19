@@ -256,7 +256,7 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
+  config = {
     users = {
       groups."${cfg.groupname}" = { };
       users."${cfg.username}" = {
