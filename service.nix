@@ -27,7 +27,9 @@ let
   root-directory = "/var/lib/${service-name}";
   runtime-directory = "${root-directory}/depot";
   headless-directory = "${runtime-directory}/Headless";
-  working-directory = "/var/run/${service-name}";
+  working-directory = "/var/run/${
+      config.systemd.services.${service-name}.serviceConfig.RuntimeDirectory
+    }";
   working-manifest-directory = "${working-directory}/manifest";
   update-working-directory = "/var/run/${update-check}";
   update-manifest-directory = "${update-working-directory}/manifest";
@@ -351,7 +353,7 @@ in {
             TimeoutStopSec = "15m";
             TimeoutAbortSec = "10m";
             LogsDirectory = service-name;
-            WorkingDirectory = root-directory;
+            WorkingDirectory = working-directory;
             RuntimeDirectory = service-name;
             KillSignal =
               "SIGINT"; # Resonite doesn't respond to SIGTERM and dies immediately
