@@ -47,11 +47,11 @@ let
 
   patchelf-command = "${pkgs.patchelf}/bin/patchelf --set-rpath \"${pkgs.libpng}/lib:${pkgs.zlib}/lib:${pkgs.bzip2.out}/lib\"";
 
-  download-command = "env $(cat ${cfg.depotdownloader-env-file} | xargs -0) ${depotdownloader}/bin/DepotDownloader -app 2519830 -beta headless -dir ";
+  download-command = "${depotdownloader}/bin/DepotDownloader -app 2519830 -beta headless -dir ";
 
   update-check-script = pkgs.writeShellScriptBin update-check ''
-    set -euxo pipefail
-
+    set -aeuxo pipefail
+    source ${cfg.depotdownloader-env-file}
     mkdir -p ${update-manifest-directory}
     
     set +e
@@ -79,7 +79,10 @@ let
 
   init-script-name = "${service-name}-update-and-start";
   init-script = pkgs.writeShellScriptBin init-script-name ''
-    set -euxo pipefail
+    set -aeuxo pipefail
+
+    source ${cfg.depotdownloader-env-file}
+    source ${cfg.credentials-file}
 
     ${pkgs.systemd}/bin/systemd-notify --status="Checking manifest..."
 
@@ -147,7 +150,7 @@ let
     ${(if cfg.disable-ready-notify then "${pkgs.systemd}/bin/systemd-notify --status=\"Executing headless...\"" else "")}
     
     cp ${config-json} ${runtime-config-path}
-    env $(cat ${cfg.credentials-file} | xargs -0) ${pkgs.jq} --in-place '. + {loginCredential: \"$RESONITE_USERNAME\", loginPassword: \"$RESONITE_PASSWORD\"}' ${runtime-config-path}
+    ${pkgs.jq} --in-place '. + {loginCredential: \"$RESONITE_USERNAME\", loginPassword: \"$RESONITE_PASSWORD\"}' ${runtime-config-path}
 
     exec ${pkgs.dotnetCorePackages.dotnet_10.runtime}/bin/dotnet ${headless-directory}/Resonite.dll -HeadlessConfig ${runtime-config-path} ${(if cfg.enable-rml then "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll" else "")}
   '';
