@@ -50,10 +50,11 @@ let
   download-command = "${depotdownloader}/bin/DepotDownloader -app 2519830 -beta headless -dir ";
 
   update-check-script = pkgs.writeShellScriptBin update-check ''
-    set -euo pipefail
+    set -aeuo pipefail
     echo "Sourcing ${cfg.depotdownloader-env-file}"
     source ${cfg.depotdownloader-env-file}
 
+    set +a
     set -x
     mkdir -p ${update-manifest-directory}
     
@@ -82,7 +83,7 @@ let
 
   init-script-name = "${service-name}-update-and-start";
   init-script = pkgs.writeShellScriptBin init-script-name ''
-    set -euo pipefail
+    set -aeuo pipefail
     
     echo "Sourcing ${cfg.credentials-file}"
     source ${cfg.credentials-file}
@@ -98,10 +99,8 @@ let
     echo "Sourcing ${cfg.depotdownloader-env-file}"
     source ${cfg.depotdownloader-env-file}
 
+    set +a
     set -x
-
-    echo "Env set:"
-    printenv | cut -d= -f1
 
     ${pkgs.systemd}/bin/systemd-notify --status="Checking manifest..."
 
