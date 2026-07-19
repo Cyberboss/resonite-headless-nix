@@ -16,12 +16,13 @@ let
   };
 
   depotdownloader = pkgs.depotdownloader.overrideAttrs (oldAttrs: {
-    src = fetchFromGitHub {
-      owner = "Cyberboss";
-      repo = "DepotDownloader";
-      rev = "6a539234e286ff56e187a0be650bd20e2ff33a33";
-      hash = "sha256-zduNWIQi+ItNSh9RfRfY0giIw/tMQIMRh9woUzQ5pJw="; # TODO
-    };
+    patches = (oldAttrs.patches or []) ++ [
+      pkgs.fetchpatch {
+        name = "add-env-var-support.patch";
+        url = "https://github.com/Cyberboss/DepotDownloader/commit/0b0a47a3ace04e772ee0861c2228686fe26716bc.patch";
+        hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; 
+      }
+    ];
   });
 
   jsonFormat = pkgs.formats.json {};
