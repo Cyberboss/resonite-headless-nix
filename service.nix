@@ -24,7 +24,7 @@ let
 
   jsonFormat = pkgs.formats.json { };
 
-  root-directory = "${cfg.home-directory}/resonite";
+  root-directory = "/var/lib/${service-name}";
   runtime-directory = "${root-directory}/depot";
   headless-directory = "${runtime-directory}/Headless";
   working-directory = "/var/run/${service-name}";
@@ -51,178 +51,163 @@ let
     "${lib.getExe depotdownloader} -app 2519830 -beta headless -dir ";
 
   update-check-script = pkgs.writeShellScriptBin update-check ''
-    
-        set -aeuo pipefail
-        echo "Sourcing ${cfg.depotdownloader-env-file}"
-        source ${cfg.depotdownloader-env-file}
-    
-        set +a
-        set -x
-        mkdir -p ${update-manifest-directory}
-        
-        set +e
-        cp -f ${runtime-directory}/manifest_* ${update-manifest-directory}/
-        set -e
-    
-        find ${update-manifest-directory} -type f -exec md5sum '{}' + | LC_ALL=C sort | md5sum > ${update-working-directory}/manifest-pre.txt
-        rm -rf ${update-manifest-directory}
-        mkdir ${update-manifest-directory}
-        ${download-command} ${update-manifest-directory} -manifest-only
-        rm -rf ${update-manifest-directory}/.DepotDownloader
-        find ${update-manifest-directory} -type f -exec md5sum '{}' + | LC_ALL=C sort | md5sum > ${update-working-directory}/manifest-post.txt
-    
-        if ! ${cmp} -s ${update-working-directory}/manifest-pre.txt ${update-working-directory}/manifest-post.txt; then
-          echo "Manifest mismatch!"
-          cat ${update-working-directory}/manifest-pre.txt
-          cat ${update-working-directory}/manifest-post.txt
-    
-          echo "Restarting headless!"
-          systemctl restart --no-block ${service-name}
-        else
-          echo "Up-to-date!"
-        fi
+
+    set -aeuo pipefail
+    echo "Sourcing ${cfg.depotdownloader-env-file}"
+    source ${cfg.depotdownloader-env-file}
+
+    set +a
+    set -x
+    mkdir -p ${update-manifest-directory}
+
+    set +e
+    cp -f ${runtime-directory}/manifest_* ${update-manifest-directory}/
+    set -e
+
+    find ${update-manifest-directory} -type f -exec md5sum '{}' + | LC_ALL=C sort | md5sum > ${update-working-directory}/manifest-pre.txt
+    rm -rf ${update-manifest-directory}
+    mkdir ${update-manifest-directory}
+    ${download-command} ${update-manifest-directory} -manifest-only
+    rm -rf ${update-manifest-directory}/.DepotDownloader
+    find ${update-manifest-directory} -type f -exec md5sum '{}' + | LC_ALL=C sort | md5sum > ${update-working-directory}/manifest-post.txt
+
+    if ! ${cmp} -s ${update-working-directory}/manifest-pre.txt ${update-working-directory}/manifest-post.txt; then
+      echo "Manifest mismatch!"
+      cat ${update-working-directory}/manifest-pre.txt
+      cat ${update-working-directory}/manifest-post.txt
+
+      echo "Restarting headless!"
+      systemctl restart --no-block ${service-name}
+    else
+      echo "Up-to-date!"
+    fi
   '';
 
   systemd-notify = "${pkgs.systemd}/bin/systemd-notify";
 
   init-script-name = "${service-name}-update-and-start";
   init-script = pkgs.writeShellScriptBin init-script-name ''
-    
-        set -aeuo pipefail
-        
-        echo "Sourcing ${cfg.credentials-file}"
-        source ${cfg.credentials-file}
-        if [[ -z "''${RESONITE_USERNAME}" ]]; then
-            echo "ERROR: RESONITE_USERNAME is required in ${cfg.credentials-file} but missing." >&2
-            exit 1
-        fi
-        if [[ -z "''${RESONITE_PASSWORD}" ]]; then
-            echo "ERROR: RESONITE_PASSWORD is required in ${cfg.credentials-file} but missing." >&2
-            exit 1
-        fi
-        
-        echo "Substituting config from ${config-json} to ${runtime-config-path}"
+
+    set -aeuo pipefail
+
+    echo "Sourcing ${cfg.credentials-file}"
+    source ${cfg.credentials-file}
+    if [[ -z "''${RESONITE_USERNAME}" ]]; then
+        echo "ERROR: RESONITE_USERNAME is required in ${cfg.credentials-file} but missing." >&2
+        exit 1
+    fi
+    if [[ -z "''${RESONITE_PASSWORD}" ]]; then
+        echo "ERROR: RESONITE_PASSWORD is required in ${cfg.credentials-file} but missing." >&2
+        exit 1
+    fi
+
+    echo "Substituting config from ${config-json} to ${runtime-config-path}"
+    ${
+      lib.getExe pkgs.jq
+    } --arg user "$RESONITE_USERNAME" --arg pass "$RESONITE_PASSWORD"  '. + {loginCredential: $user, loginPassword: $pass}' ${config-json} > ${runtime-config-path}
+
+    echo "Sourcing ${cfg.depotdownloader-env-file}"
+    source ${cfg.depotdownloader-env-file}
+
+    set +a
+    set -x
+
+    ${(if !cfg.use-steam then
+      "echo 'Steam support is currently disabled! Resonite will not update!'"
+    else ''
+
+      ${systemd-notify} --status="Checking manifest..."
+
+      mkdir -p ${working-manifest-directory}
+      set +e
+      cp -f ${runtime-directory}/manifest_*  ${working-manifest-directory}/
+      set -e
+
+      find ${working-manifest-directory} -type f -exec md5sum '{}' + | LC_ALL=C sort | md5sum > ${working-directory}/manifest-pre.txt
+      rm -rf ${working-manifest-directory}
+      mkdir ${working-manifest-directory}
+      ${download-command} ${working-manifest-directory} -manifest-only
+      rm -rf ${working-manifest-directory}/.DepotDownloader
+      find ${working-manifest-directory} -type f -exec md5sum '{}' + | LC_ALL=C sort | md5sum > ${working-directory}/manifest-post.txt
+
+      if ! ${cmp} -s ${working-directory}/manifest-pre.txt ${working-directory}/manifest-post.txt; then
+        echo "Manifest mismatch!"
+        ${systemd-notify} --status="Clearing old depot..."
+
+        rm -rf ${runtime-directory}
+        ${systemd-notify} --status="Downloading new depot..."
+        ${download-command} ${runtime-directory}
+
+        ${systemd-notify} --status="Patching binaries..."
+        for dir in ${headless-directory}/runtimes/*/; do
+          echo "Entering $dir"
+          for file in ''${dir}native/*.so; do
+            [ -f "$file" ] || continue  # Skip if it's a literal unexpanded glob
+            echo "Patching $file"
+            ${patchelf-command} $file
+          done
+        done
+
+        for file in ${headless-directory}/RuntimeData/*; do
+          if [ -d "$file" ]; then
+            echo "Skipping directory: $file"
+            continue
+          fi
+          echo "Patching $file"
+          chmod 770 $file
+          set +e
+          ${patchelf-command} $file
+          set -e
+        done
+
         ${
-          lib.getExe pkgs.jq
-        } --arg user "$RESONITE_USERNAME" --arg pass "$RESONITE_PASSWORD"  '. + {loginCredential: $user, loginPassword: $pass}' ${config-json} > ${runtime-config-path}
-    
-        echo "Sourcing ${cfg.depotdownloader-env-file}"
-        source ${cfg.depotdownloader-env-file}
-    
-        set +a
-        set -x
-    
-        ${
-          (if !cfg.use-steam then
-            "echo 'Steam support is currently disabled! Resonite will not update!'"
-          else ''
-            
-                ${systemd-notify} --status="Checking manifest..."
-            
-                mkdir -p ${working-manifest-directory}
-                set +e
-                cp -f ${runtime-directory}/manifest_*  ${working-manifest-directory}/
-                set -e
-            
-                find ${working-manifest-directory} -type f -exec md5sum '{}' + | LC_ALL=C sort | md5sum > ${working-directory}/manifest-pre.txt
-                rm -rf ${working-manifest-directory}
-                mkdir ${working-manifest-directory}
-                ${download-command} ${working-manifest-directory} -manifest-only
-                rm -rf ${working-manifest-directory}/.DepotDownloader
-                find ${working-manifest-directory} -type f -exec md5sum '{}' + | LC_ALL=C sort | md5sum > ${working-directory}/manifest-post.txt
-            
-                if ! ${cmp} -s ${working-directory}/manifest-pre.txt ${working-directory}/manifest-post.txt; then
-                  echo "Manifest mismatch!"
-                  ${systemd-notify} --status="Clearing old depot..."
-            
-                  rm -rf ${runtime-directory}
-                  ${systemd-notify} --status="Downloading new depot..."
-                  ${download-command} ${runtime-directory}
-            
-                  ${systemd-notify} --status="Patching binaries..."
-                  for dir in ${headless-directory}/runtimes/*/; do
-                    echo "Entering $dir"
-                    for file in ''${dir}native/*.so; do
-                      [ -f "$file" ] || continue  # Skip if it's a literal unexpanded glob
-                      echo "Patching $file"
-                      ${patchelf-command} $file
-                    done
-                  done
-            
-                  for file in ${headless-directory}/RuntimeData/*; do
-                    if [ -d "$file" ]; then
-                      echo "Skipping directory: $file"
-                      continue
-                    fi
-                    echo "Patching $file"
-                    chmod 770 $file
-                    set +e
-                    ${patchelf-command} $file
-                    set -e
-                  done
-            
-                  ${
-                    (if cfg.enable-rml then
-                      ''
-                        ${systemd-notify} --status="Installing ResoniteModLoader..."''
-                    else
-                      "")
-                  }
-                  ${
-                    (if cfg.enable-rml then
-                      "cp -rf ${rml}/* ${headless-directory}/ && chmod 770 ${headless-directory}/rml_mods && chmod 770 ${headless-directory}/rml_libs && chmod -R 770 ${headless-directory}/rml_libs/ && rm -rf ${headless-directory}/rml_config && mkdir ${headless-directory}/rml_config && chmod -R 770 ${headless-directory}/rml_config && chmod 770 ${headless-directory}/Libraries && chmod -R 770 ${headless-directory}/Libraries/"
-                    else
-                      "")
-                  }
-            
-                  cp ${working-manifest-directory}/* ${runtime-directory}/
-                fi
-          '')
-        }
-    
-        # Loop through and copy each path securely
-        ${
-          lib.concatMapStringsSep "\n" (p: ''
-            
-                  echo "Copying ${
-                    toString p
-                  } to ${headless-directory}/rml_mods/..."
-                  cp -f "${toString p}" "${headless-directory}/rml_mods/"
-          '') cfg.rml-mods
-        }
-        ${
-          lib.concatMapStringsSep "\n" (p: ''
-            
-                  echo "Copying ${
-                    toString p
-                  } to ${headless-directory}/rml_config/..."
-                  cp -f "${toString p}" "${headless-directory}/rml_config/"
-          '') cfg.rml-configs
-        }
-    
-        cd ${headless-directory}
-        
-        ${
-          (if !cfg.disable-ready-notify then
-            ''${systemd-notify} --ready --status="Executing headless..."''
-          else
-            "")
-        }
-        ${
-          (if cfg.disable-ready-notify then
-            ''${systemd-notify} --status="Executing headless..."''
-          else
-            "")
-        }
-    
-        exec ${
-          lib.getExe pkgs.dotnetCorePackages.dotnet_10.runtime
-        } ${headless-directory}/Resonite.dll -HeadlessConfig ${runtime-config-path} ${
           (if cfg.enable-rml then
-            "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll"
+            ''${systemd-notify} --status="Installing ResoniteModLoader..."''
           else
             "")
         }
+        ${
+          (if cfg.enable-rml then
+            "cp -rf ${rml}/* ${headless-directory}/ && chmod 770 ${headless-directory}/rml_mods && chmod 770 ${headless-directory}/rml_libs && chmod -R 770 ${headless-directory}/rml_libs/ && rm -rf ${headless-directory}/rml_config && mkdir ${headless-directory}/rml_config && chmod -R 770 ${headless-directory}/rml_config && chmod 770 ${headless-directory}/Libraries && chmod -R 770 ${headless-directory}/Libraries/"
+          else
+            "")
+        }
+
+        cp ${working-manifest-directory}/* ${runtime-directory}/
+      fi
+    '')}
+
+    # Loop through and copy each path securely
+    ${lib.concatMapStringsSep "\n" (p: ''
+
+      echo "Copying ${toString p} to ${headless-directory}/rml_mods/..."
+      cp -f "${toString p}" "${headless-directory}/rml_mods/"
+    '') cfg.rml-mods}
+    ${lib.concatMapStringsSep "\n" (p: ''
+
+      echo "Copying ${toString p} to ${headless-directory}/rml_config/..."
+      cp -f "${toString p}" "${headless-directory}/rml_config/"
+    '') cfg.rml-configs}
+
+    cd ${headless-directory}
+
+    ${(if !cfg.disable-ready-notify then
+      ''${systemd-notify} --ready --status="Executing headless..."''
+    else
+      "")}
+    ${(if cfg.disable-ready-notify then
+      ''${systemd-notify} --status="Executing headless..."''
+    else
+      "")}
+
+    exec ${
+      lib.getExe pkgs.dotnetCorePackages.dotnet_10.runtime
+    } ${headless-directory}/Resonite.dll -HeadlessConfig ${runtime-config-path} ${
+      (if cfg.enable-rml then
+        "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll"
+      else
+        "")
+    }
   '';
 
   config-json = jsonFormat.generate config-filename (cfg.config-json // {
@@ -238,8 +223,8 @@ in {
       type = lib.types.nonEmptyStr;
       default = service-name;
       description = ''
-        
-                The name of the user used to execute ${service-name}.
+
+        The name of the user used to execute ${service-name}.
       '';
     };
 
@@ -247,25 +232,16 @@ in {
       type = lib.types.nonEmptyStr;
       default = service-name;
       description = ''
-        
-                The name of group the user used to execute ${service-name} will belong to.
-      '';
-    };
 
-    home-directory = lib.mkOption {
-      type = lib.types.nonEmptyStr;
-      default = "/home/${service-name}";
-      description = ''
-        
-                The home directory of ${service-name}. Should be persistent.
+        The name of group the user used to execute ${service-name} will belong to.
       '';
     };
 
     depotdownloader-env-file = lib.mkOption {
       type = lib.types.nonEmptyStr;
       description = ''
-        
-                Path to a file containing the DepotDownloader environment (Currently only supports DEPOT_DOWNLOADER_USERNAME, DEPOT_DOWNLOADER_PASSWORD, and DEPOT_DOWNLOADER_BETA_PASSWORD)
+
+        Path to a file containing the DepotDownloader environment (Currently only supports DEPOT_DOWNLOADER_USERNAME, DEPOT_DOWNLOADER_PASSWORD, and DEPOT_DOWNLOADER_BETA_PASSWORD)
       '';
     };
 
@@ -273,8 +249,8 @@ in {
       type = lib.types.bool;
       default = true;
       description = ''
-        
-                Use Steam processes. Turning this off is useful in cases where you have the latest binaries but rate limiting is occurring
+
+        Use Steam processes. Turning this off is useful in cases where you have the latest binaries but rate limiting is occurring
       '';
     };
 
@@ -282,24 +258,24 @@ in {
       type = lib.types.nonEmptyStr;
       default = "30m";
       description = ''
-        
-                The systemd timer interval for automatic updates. See https://www.freedesktop.org/software/systemd/man/latest/systemd.time.html#
+
+        The systemd timer interval for automatic updates. See https://www.freedesktop.org/software/systemd/man/latest/systemd.time.html#
       '';
     };
 
     config-json = lib.mkOption {
       type = lib.types.attrs;
       description = ''
-        
-                The Config.json layout for the headless. Data and Cache directories are set to ~/data and ~/cache under the service's home folder. Log directory is in ${log-directory-path}. MUST NOT contain the headless Resonite account credentials. Use credentials-file to inject them at runtime.
+
+        The Config.json layout for the headless. Data and Cache directories are set to ~/data and ~/cache under ${root-directory}. Log directory is in ${log-directory-path}. MUST NOT contain the headless Resonite account credentials. Use credentials-file to inject them at runtime.
       '';
     };
 
     credentials-file = lib.mkOption {
       type = lib.types.nonEmptyStr;
       description = ''
-        
-                Path to an environment file containing definitions for RESONITE_USERNAME and RESONITE_PASSWORD
+
+        Path to an environment file containing definitions for RESONITE_USERNAME and RESONITE_PASSWORD
       '';
     };
 
@@ -307,8 +283,8 @@ in {
       type = lib.types.bool;
       default = false;
       description = ''
-        
-                Whether to enable ResoniteModLoader.
+
+        Whether to enable ResoniteModLoader.
       '';
     };
 
@@ -316,8 +292,8 @@ in {
       type = lib.types.bool;
       default = false;
       description = ''
-        
-                Whether to send the systemd ready notification just prior to starting Resonite. Enabling this flag does NOT change the service type from "notify", if you set it, you should have a mod installed that sends the ready notification from within resonite itself.
+
+        Whether to send the systemd ready notification just prior to starting Resonite. Enabling this flag does NOT change the service type from "notify", if you set it, you should have a mod installed that sends the ready notification from within resonite itself.
       '';
     };
 
@@ -325,8 +301,8 @@ in {
       type = lib.types.listOf lib.types.path;
       default = [ ];
       description = ''
-        
-                A list of ResoniteModLoader mod .dll paths to install.
+
+        A list of ResoniteModLoader mod .dll paths to install.
       '';
     };
 
@@ -334,8 +310,8 @@ in {
       type = lib.types.listOf lib.types.path;
       default = [ ];
       description = ''
-        
-                A list of ResoniteModLoader mod config .json paths to install.
+
+        A list of ResoniteModLoader mod config .json paths to install.
       '';
     };
 
@@ -343,8 +319,8 @@ in {
       type = lib.types.listOf lib.types.anything;
       default = [ ];
       description = ''
-        
-                Additional restart triggers for the systemd service
+
+        Additional restart triggers for the systemd service
       '';
     };
   };
@@ -354,9 +330,7 @@ in {
       groups."${cfg.groupname}" = { };
       users."${cfg.username}" = {
         isSystemUser = true;
-        createHome = true;
         group = cfg.groupname;
-        home = cfg.home-directory;
       };
     };
 
@@ -377,7 +351,7 @@ in {
             TimeoutStopSec = "15m";
             TimeoutAbortSec = "10m";
             LogsDirectory = service-name;
-            WorkingDirectory = cfg.home-directory;
+            WorkingDirectory = root-directory;
             RuntimeDirectory = service-name;
             KillSignal =
               "SIGINT"; # Resonite doesn't respond to SIGTERM and dies immediately

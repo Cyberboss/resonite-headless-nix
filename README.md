@@ -36,7 +36,7 @@ A Nixpkgs reference is, for all intents and purposes, also required.
             # See https://wiki.resonite.com/Headless_server_software/Configuration_file
             # This structure maps directly to the JSON with some exceptions:
             # loginCredential and loginPassword are configured later using credentials-file and are not allowed
-            # dataFolder and cacheFolder map to the systemd service user's home directory under ~/data and ~/cache respectively
+            # dataFolder and cacheFolder map to the state directory under /var/lib/resonite-headless/data and /var/lib/resonite-headless/cache respectively
             # logFolder maps to /var/log/resonite-headless by default
             
             "$schema" = "https://raw.githubusercontent.com/Yellow-Dog-Man/JSONSchemas/main/schemas/HeadlessConfig.schema.json";

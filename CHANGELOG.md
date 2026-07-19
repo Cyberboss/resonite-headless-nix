@@ -7,6 +7,10 @@ and this project adheres to Semantic Versioning ([SemVer]).
 
 ## [Unreleased]
 
+### Changes
+
+- Moved state directory from the service user account's home directory to `/var/lib/resonite-headless`. [@Cyberboss]
+
 ### Fixed
 
 - `README.md` formatting. [@Cyberboss]
