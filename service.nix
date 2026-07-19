@@ -51,7 +51,6 @@ let
     "${lib.getExe depotdownloader} -app 2519830 -beta headless -dir ";
 
   update-check-script = pkgs.writeShellScriptBin update-check ''
-
     set -aeuo pipefail
     echo "Sourcing ${cfg.depotdownloader-env-file}"
     source ${cfg.depotdownloader-env-file}
@@ -87,7 +86,6 @@ let
 
   init-script-name = "${service-name}-update-and-start";
   init-script = pkgs.writeShellScriptBin init-script-name ''
-
     set -aeuo pipefail
 
     echo "Sourcing ${cfg.credentials-file}"
@@ -115,7 +113,6 @@ let
     ${(if !cfg.use-steam then
       "echo 'Steam support is currently disabled! Resonite will not update!'"
     else ''
-
       ${systemd-notify} --status="Checking manifest..."
 
       mkdir -p ${working-manifest-directory}
@@ -179,7 +176,6 @@ let
 
     # Loop through and copy each path securely
     ${lib.concatMapStringsSep "\n" (p: ''
-
       echo "Copying ${toString p} to ${headless-directory}/rml_mods/..."
       cp -f "${toString p}" "${headless-directory}/rml_mods/"
     '') cfg.rml-mods}
@@ -223,7 +219,6 @@ in {
       type = lib.types.nonEmptyStr;
       default = service-name;
       description = ''
-
         The name of the user used to execute ${service-name}.
       '';
     };
@@ -232,15 +227,21 @@ in {
       type = lib.types.nonEmptyStr;
       default = service-name;
       description = ''
-
         The name of group the user used to execute ${service-name} will belong to.
+      '';
+    };
+
+    home-directory = lib.mkOption {
+      type = lib.types.nonEmptyStr;
+      default = "/home/${service-name}";
+      description = ''
+        The home directory of ${service-name}. Should be persistent.
       '';
     };
 
     depotdownloader-env-file = lib.mkOption {
       type = lib.types.nonEmptyStr;
       description = ''
-
         Path to a file containing the DepotDownloader environment (Currently only supports DEPOT_DOWNLOADER_USERNAME, DEPOT_DOWNLOADER_PASSWORD, and DEPOT_DOWNLOADER_BETA_PASSWORD)
       '';
     };
@@ -249,7 +250,6 @@ in {
       type = lib.types.bool;
       default = true;
       description = ''
-
         Use Steam processes. Turning this off is useful in cases where you have the latest binaries but rate limiting is occurring
       '';
     };
@@ -258,7 +258,6 @@ in {
       type = lib.types.nonEmptyStr;
       default = "30m";
       description = ''
-
         The systemd timer interval for automatic updates. See https://www.freedesktop.org/software/systemd/man/latest/systemd.time.html#
       '';
     };
@@ -266,7 +265,6 @@ in {
     config-json = lib.mkOption {
       type = lib.types.attrs;
       description = ''
-
         The Config.json layout for the headless. Data and Cache directories are set to ~/data and ~/cache under ${root-directory}. Log directory is in ${log-directory-path}. MUST NOT contain the headless Resonite account credentials. Use credentials-file to inject them at runtime.
       '';
     };
@@ -274,7 +272,6 @@ in {
     credentials-file = lib.mkOption {
       type = lib.types.nonEmptyStr;
       description = ''
-
         Path to an environment file containing definitions for RESONITE_USERNAME and RESONITE_PASSWORD
       '';
     };
@@ -283,7 +280,6 @@ in {
       type = lib.types.bool;
       default = false;
       description = ''
-
         Whether to enable ResoniteModLoader.
       '';
     };
@@ -292,7 +288,6 @@ in {
       type = lib.types.bool;
       default = false;
       description = ''
-
         Whether to send the systemd ready notification just prior to starting Resonite. Enabling this flag does NOT change the service type from "notify", if you set it, you should have a mod installed that sends the ready notification from within resonite itself.
       '';
     };
@@ -301,7 +296,6 @@ in {
       type = lib.types.listOf lib.types.path;
       default = [ ];
       description = ''
-
         A list of ResoniteModLoader mod .dll paths to install.
       '';
     };
@@ -310,7 +304,6 @@ in {
       type = lib.types.listOf lib.types.path;
       default = [ ];
       description = ''
-
         A list of ResoniteModLoader mod config .json paths to install.
       '';
     };
@@ -319,7 +312,6 @@ in {
       type = lib.types.listOf lib.types.anything;
       default = [ ];
       description = ''
-
         Additional restart triggers for the systemd service
       '';
     };
@@ -332,6 +324,7 @@ in {
         isSystemUser = true;
         createHome = true;
         group = cfg.groupname;
+        home = cfg.home-directory;
       };
     };
 
