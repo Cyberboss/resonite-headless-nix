@@ -107,7 +107,7 @@ let
     set +a
     set -x
 
-    ${(if ! cfg.use-steam then "" else ''
+    ${(if ! cfg.use-steam then "echo 'Steam support is currently disabled! Resonite will not update!'" else ''
     ${systemd-notify} --status="Checking manifest..."
 
     mkdir -p ${working-manifest-directory}
@@ -237,7 +237,7 @@ in
     config-json = lib.mkOption {
       type = lib.types.attrs;
       description = ''
-        The Config.json layout for the headless. Data and Cache directories are set to the service's home folder. Log directory is in ${log-directory-path}. MUST NOT contain the headless Resonite account credentials. Use credentials-file to inject them at runtime.
+        The Config.json layout for the headless. Data and Cache directories are set to ~/data and ~/cache under the service's home folder. Log directory is in ${log-directory-path}. MUST NOT contain the headless Resonite account credentials. Use credentials-file to inject them at runtime.
       '';
     };
 
