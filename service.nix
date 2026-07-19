@@ -83,13 +83,23 @@ let
   init-script-name = "${service-name}-update-and-start";
   init-script = pkgs.writeShellScriptBin init-script-name ''
     set -euo pipefail
+    
+    echo "Sourcing ${cfg.credentials-file}"
+    source ${cfg.credentials-file}
+    if [[ -z "''${RESONITE_USERNAME}" ]]; then
+        echo "ERROR: RESONITE_USERNAME is required in ${cfg.credentials-file} but missing." >&2
+        exit 1
+    fi
+    if [[ -z "''${RESONITE_PASSWORD}" ]]; then
+        echo "ERROR: RESONITE_PASSWORD is required in ${cfg.credentials-file} but missing." >&2
+        exit 1
+    fi
 
     echo "Sourcing ${cfg.depotdownloader-env-file}"
     source ${cfg.depotdownloader-env-file}
-    echo "Sourcing ${cfg.credentials-file}"
-    source ${cfg.credentials-file}
 
     set -x
+
     ${pkgs.systemd}/bin/systemd-notify --status="Checking manifest..."
 
     mkdir -p ${working-manifest-directory}
