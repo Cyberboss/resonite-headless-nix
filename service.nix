@@ -15,6 +15,15 @@ let
     stripRoot = false;
   };
 
+  depotdownloader = pkgs.depotdownloader.overrideAttrs (oldAttrs: {
+    src = fetchFromGitHub {
+      owner = "Cyberboss";
+      repo = "DepotDownloader";
+      rev = "6a539234e286ff56e187a0be650bd20e2ff33a33";
+      hash = "sha256-zduNWIQi+ItNSh9RfRfY0giIw/tMQIMRh9woUzQ5pJw="; # TODO
+    };
+  });
+
   jsonFormat = pkgs.formats.json {};
 
   root-directory = "${cfg.home-directory}/resonite";
@@ -38,7 +47,7 @@ let
 
   patchelf-command = "${pkgs.patchelf}/bin/patchelf --set-rpath \"${pkgs.libpng}/lib:${pkgs.zlib}/lib:${pkgs.bzip2.out}/lib\"";
 
-  download-command = "${pkgs.depotdownloader}/bin/DepotDownloader -username \"${cfg.steam-username}\" -password \"${cfg.steam-password}\" -app 2519830 -beta headless -betapassword \"${cfg.headless-code}\" -dir ";
+  download-command = "env $(cat ${cfg.depot-downloader-env-file} | xargs) ${depotdownloader}/bin/DepotDownloader -app 2519830 -beta headless -dir ";
 
   update-check-script = pkgs.writeShellScriptBin update-check ''
     set -euxo pipefail
@@ -174,24 +183,10 @@ in
       '';
     };
 
-    steam-username = lib.mkOption {
+    depot-downloader-env-file = lib.mkOption {
       type = lib.types.nonEmptyStr;
       description = ''
-        The name of the steam account to use.
-      '';
-    };
-
-    steam-password = lib.mkOption {
-      type = lib.types.nonEmptyStr;
-      description = ''
-        The password of the steam account to use.
-      '';
-    };
-
-    headless-code = lib.mkOption {
-      type = lib.types.nonEmptyStr;
-      description = ''
-        The current Resonite headless code.
+        Path to a file containing the DepotDownloader environment (Currently only supports DEPOT_DOWNLOADER_USERNAME, DEPOT_DOWNLOADER_PASSWORD, and DEPOT_DOWNLOADER_BETA_PASSWORD)
       '';
     };
 
