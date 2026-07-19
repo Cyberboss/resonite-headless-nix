@@ -48,7 +48,7 @@ let
 
   patchelf-command = "${pkgs.patchelf}/bin/patchelf --set-rpath \"${pkgs.libpng}/lib:${pkgs.zlib}/lib:${pkgs.bzip2.out}/lib\"";
 
-  download-command = "env $(cat ${cfg.depot-downloader-env-file} | xargs) ${depotdownloader}/bin/DepotDownloader -app 2519830 -beta headless -dir ";
+  download-command = "env $(cat ${cfg.depotdownloader-env-file} | xargs) ${depotdownloader}/bin/DepotDownloader -app 2519830 -beta headless -dir ";
 
   update-check-script = pkgs.writeShellScriptBin update-check ''
     set -euxo pipefail
@@ -184,7 +184,7 @@ in
       '';
     };
 
-    depot-downloader-env-file = lib.mkOption {
+    depotdownloader-env-file = lib.mkOption {
       type = lib.types.nonEmptyStr;
       description = ''
         Path to a file containing the DepotDownloader environment (Currently only supports DEPOT_DOWNLOADER_USERNAME, DEPOT_DOWNLOADER_PASSWORD, and DEPOT_DOWNLOADER_BETA_PASSWORD)
