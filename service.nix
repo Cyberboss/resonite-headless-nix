@@ -346,7 +346,7 @@ in {
             TimeoutAbortSec = "10m";
             LogsDirectory = service-name;
             RuntimeDirectory = service-name;
-            State-Directory = service-name;
+            StateDirectory = service-name;
             WorkingDirectory = working-directory;
             KillSignal =
               "SIGINT"; # Resonite doesn't respond to SIGTERM and dies immediately
