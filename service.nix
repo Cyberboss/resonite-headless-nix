@@ -24,8 +24,14 @@ let
 
   jsonFormat = pkgs.formats.json { };
 
-  root-directory = "/var/lib/${service-name}";
-  runtime-directory = "${root-directory}/depot";
+  state-directory-name = service-name;
+  state-directory = "/var/lib/${state-directory-name}";
+  cache-directory-name = service-name;
+  cache-directory = "/var/cache/${cache-directory-name}";
+
+  resonite-data-directory = "${state-directory}/data";
+  resonite-cache-directory = "${cache-directory}/cache";
+  runtime-directory = "${state-directory}/depot";
   headless-directory = "${runtime-directory}/Headless";
   working-directory = "/var/run/${service-name}";
   working-manifest-directory = "${working-directory}/manifest";
@@ -207,8 +213,8 @@ let
   '';
 
   config-json = jsonFormat.generate config-filename (cfg.config-json // {
-    dataFolder = "${root-directory}/data";
-    cacheFolder = "${root-directory}/cache";
+    dataFolder = resonite-data-directory;
+    cacheFolder = resonite-cache-directory;
     logsFolder = log-directory-path;
     loginCredential = null;
     loginPassword = null;
@@ -265,7 +271,7 @@ in {
     config-json = lib.mkOption {
       type = lib.types.attrs;
       description = ''
-        The Config.json layout for the headless. Data and Cache directories are set to ~/data and ~/cache under ${root-directory}. Log directory is in ${log-directory-path}. MUST NOT contain the headless Resonite account credentials. Use credentials-file to inject them at runtime.
+        The Config.json layout for the headless. Data and Cache directories are set to ${resonite-data-directory} and ${resonite-cache-directory} respectively. Log directory is in ${log-directory-path}. MUST NOT contain the headless Resonite account credentials. Use credentials-file to inject them at runtime.
       '';
     };
 
@@ -346,7 +352,8 @@ in {
             TimeoutAbortSec = "10m";
             LogsDirectory = service-name;
             RuntimeDirectory = service-name;
-            StateDirectory = service-name;
+            StateDirectory = state-directory-name;
+            CacheDirectory = cache-directory-name;
             WorkingDirectory = working-directory;
             KillSignal =
               "SIGINT"; # Resonite doesn't respond to SIGTERM and dies immediately
