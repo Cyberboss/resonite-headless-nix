@@ -357,7 +357,7 @@ in {
             WorkingDirectory = working-directory;
             KillSignal =
               "SIGINT"; # Resonite doesn't respond to SIGTERM and dies immediately
-            WatchdogSignal = null;
+            WatchdogSignal = "";
           };
           restartTriggers =
             [ config-json cfg.enable-rml cfg.rml-mods cfg.auto-update-interval ]
