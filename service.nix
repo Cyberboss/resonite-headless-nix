@@ -49,7 +49,7 @@ let
   mod-builds-cache-directory = "${cache-directory}/mod_sources";
   build-rml-mods = output-directory:
     if cfg.enable-rml then
-      (lib.concatStringsSep "\n" [''
+      (lib.concatStringsSep "\n" ([''
         if [ ! -f "${mod-builds-cache-directory}/ResoniteModLoader.dll" || ! -f "${mod-builds-cache-directory}/0Harmony.dll" ]; then
           ${systemd-notify} --status="Building ResoniteModLoader..."
 
@@ -94,7 +94,7 @@ let
           cp ${mod-builds-cache-directory}/${mod-definition.name}.dll ${output-directory}/
         '') cfg.rml-mod-sources)
       else
-        [ ]))
+        [ ])))
     else
       "";
 
