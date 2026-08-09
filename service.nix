@@ -60,7 +60,7 @@ let
           cp -r ${cfg.rml-source}/. $SOURCE_DIR/
           chmod -R 777 $SOURCE_DIR
           pushd $SOURCE_DIR
-          ResonitePath=${headless-directory} && ${cfg.dotnet} publish -o $PUBLISH_DIR
+          ResonitePath=${headless-directory}/ ${cfg.dotnet} publish -o $PUBLISH_DIR
 
           mkdir -p ${mod-builds-cache-directory}/
           mv $PUBLISH_DIR/ResoniteModLoader.dll ${mod-builds-cache-directory}/
@@ -87,7 +87,7 @@ let
             cp -r ${mod-definition.src}/. $SOURCE_DIR/
             chmod -R 777 $SOURCE_DIR
             pushd $SOURCE_DIR
-            ResonitePath=${headless-directory} && ${cfg.dotnet} publish -o $PUBLISH_DIR
+            ResonitePath=${headless-directory}/ ${cfg.dotnet} publish -o $PUBLISH_DIR
 
             mkdir -p ${mod-builds-cache-directory}/
             mv $PUBLISH_DIR/${mod-definition.name}.dll ${mod-builds-cache-directory}/
