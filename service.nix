@@ -72,6 +72,7 @@ let
         mkdir -p ${headless-directory}/Libraries
         mkdir -p ${headless-directory}/rml_mods
         mkdir -p ${headless-directory}/rml_libs
+        mkdir -p ${headless-directory}/rml_config
 
         cp ${mod-builds-cache-directory}/ResoniteModLoader.dll ${headless-directory}/Libraries/
         cp ${mod-builds-cache-directory}/0Harmony.dll ${headless-directory}/rml_libs/
