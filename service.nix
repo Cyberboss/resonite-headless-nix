@@ -55,7 +55,7 @@ let
 
           PUBLISH_DIR=$(mktemp -d)
           trap 'rm -rf "$PUBLISH_DIR"' EXIT
-          cp -r ${config.rml-source.src} $PUBLISH_DIR/
+          cp -r ${cfg.rml-source.src} $PUBLISH_DIR/
           pushd $PUBLISH_DIR
           ResonitePath=${headless-directory} && ${cfg.dotnet} publish -o $PUBLISH_DIR
 
