@@ -69,14 +69,6 @@ let
 
           rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"
         fi
-
-        mkdir -p ${headless-directory}/Libraries
-        mkdir -p ${headless-directory}/rml_mods
-        mkdir -p ${headless-directory}/rml_libs
-        mkdir -p ${headless-directory}/rml_config
-
-        cp ${mod-builds-cache-directory}/ResoniteModLoader.dll ${headless-directory}/Libraries/
-        cp ${mod-builds-cache-directory}/0Harmony.dll ${headless-directory}/rml_libs/
       ''] ++ (if cfg.rml-mod-sources != null then
         (map (mod-definition: ''
           if [ ! -f "${mod-builds-cache-directory}/${mod-definition.name}.dll" ]; then
@@ -98,7 +90,6 @@ let
               lib.getExe cfg.dotnet.sdk
             } publish -o $PUBLISH_DIR /nowarn:NETSDK1194
 
-            mkdir -p ${mod-builds-cache-directory}/
             mv $PUBLISH_DIR/${mod-definition.name}.dll ${mod-builds-cache-directory}/
 
             popd
@@ -241,6 +232,19 @@ let
     ${(if cfg.enable-rml then ''
       ${build-rml-mods "${headless-directory}/rml_mods/"}
 
+      mkdir -p ${headless-directory}/Libraries
+      mkdir -p ${headless-directory}/rml_libs
+      mkdir -p ${headless-directory}/rml_config
+      mkdir -p ${headless-directory}/rml_mods
+
+      chmod -R 770 ${headless-directory}/Libraries
+      chmod -R 770 ${headless-directory}/rml_libs
+      chmod -R 770 ${headless-directory}/rml_config
+      chmod -R 770 ${headless-directory}/rml_mods
+
+      cp ${mod-builds-cache-directory}/ResoniteModLoader.dll ${headless-directory}/Libraries/
+      cp ${mod-builds-cache-directory}/0Harmony.dll ${headless-directory}/rml_libs/
+
       # Loop through and copy each path securely
       ${lib.concatMapStringsSep "\n" (p: ''
         echo "Copying ${toString p} to ${headless-directory}/rml_mods/..."
@@ -252,10 +256,10 @@ let
         cp -f "${toString p}" "${headless-directory}/rml_config/"
       '') cfg.rml-configs}
 
-      chmod -R 770 ${headless-directory}/rml_mods
+      chmod -R 770 ${headless-directory}/Libraries
       chmod -R 770 ${headless-directory}/rml_libs
       chmod -R 770 ${headless-directory}/rml_config
-      chmod -R 770 ${headless-directory}/Libraries
+      chmod -R 770 ${headless-directory}/rml_mods
     '' else
       "")}
 
