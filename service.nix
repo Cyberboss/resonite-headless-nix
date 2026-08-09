@@ -45,7 +45,9 @@ let
 
   update-check = "${service-name}-update";
 
-  mod-builds-cache-directory = "${cache-directory}/mod_sources";
+  mods-cache-root = "${cache-directory}/mod_sources";
+  mod-builds-cache-directory = "${mods-cache-root}/${mods-hash}";
+  mod-hash = builtins.hashString "sha256" (builtins.toJSON cfg.rml-mod-sources);
   build-rml-mods = if cfg.enable-rml then
     (lib.concatStringsSep "\n" ([''
       if [ ! -f "${mod-builds-cache-directory}/ResoniteModLoader.dll" ] || [ ! -f "${mod-builds-cache-directory}/0Harmony.dll" ]; then
@@ -62,6 +64,7 @@ let
           lib.getExe cfg.dotnet.sdk
         } publish -o $PUBLISH_DIR /nowarn:NETSDK1194
 
+        rm -rf ${mods-cache-root}
         mkdir -p ${mod-builds-cache-directory}/
         mv $PUBLISH_DIR/ResoniteModLoader.dll ${mod-builds-cache-directory}/
         mv $PUBLISH_DIR/0Harmony.dll ${mod-builds-cache-directory}/
@@ -194,7 +197,7 @@ let
         echo "Manifest mismatch!"
         ${systemd-notify} --status="Clearing old depot..."
 
-        rm -rf ${runtime-directory}
+        rm -rf ${runtime-directory} ${mods-cache-root}
         ${systemd-notify} --status="Downloading new depot..."
         ${download-command} ${runtime-directory}
 
