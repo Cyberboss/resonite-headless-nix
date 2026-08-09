@@ -46,62 +46,64 @@ let
   update-check = "${service-name}-update";
 
   mod-builds-cache-directory = "${cache-directory}/mod_sources";
-  build-rml-mods = output-directory:
-    if cfg.enable-rml then
-      (lib.concatStringsSep "\n" ([''
-        if [ ! -f "${mod-builds-cache-directory}/ResoniteModLoader.dll" ] || [ ! -f "${mod-builds-cache-directory}/0Harmony.dll" ]; then
-          ${systemd-notify} --status="Building ResoniteModLoader..."
+  build-rml-mods = if cfg.enable-rml then
+    (lib.concatStringsSep "\n" ([''
+      if [ ! -f "${mod-builds-cache-directory}/ResoniteModLoader.dll" ] || [ ! -f "${mod-builds-cache-directory}/0Harmony.dll" ]; then
+        ${systemd-notify} --status="Building ResoniteModLoader..."
+
+        SOURCE_DIR=$(mktemp -d)
+        PUBLISH_DIR=$(mktemp -d)
+        trap 'rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"' EXIT
+
+        cp -r ${cfg.rml-source}/. $SOURCE_DIR/
+        chmod -R 777 $SOURCE_DIR
+        pushd $SOURCE_DIR
+        ResonitePath=${headless-directory}/ ${
+          lib.getExe cfg.dotnet.sdk
+        } publish -o $PUBLISH_DIR /nowarn:NETSDK1194
+
+        mkdir -p ${mod-builds-cache-directory}/
+        mv $PUBLISH_DIR/ResoniteModLoader.dll ${mod-builds-cache-directory}/
+        mv $PUBLISH_DIR/0Harmony.dll ${mod-builds-cache-directory}/
+
+        rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"
+      fi
+
+      cp ${mod-builds-cache-directory}/ResoniteModLoader.dll ${headless-directory}/Libraries/
+      cp ${mod-builds-cache-directory}/0Harmony.dll ${headless-directory}/rml_libs/
+    ''] ++ (if cfg.rml-mod-sources != null then
+      (map (mod-definition: ''
+        if [ ! -f "${mod-builds-cache-directory}/${mod-definition.name}.dll" ]; then
+          ${systemd-notify} --status="Building mod: ${mod-definition.name}..."
 
           SOURCE_DIR=$(mktemp -d)
           PUBLISH_DIR=$(mktemp -d)
           trap 'rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"' EXIT
 
-          cp -r ${cfg.rml-source}/. $SOURCE_DIR/
+          cp -r ${mod-definition.src}/. $SOURCE_DIR/
           chmod -R 777 $SOURCE_DIR
           pushd $SOURCE_DIR
-          ResonitePath=${headless-directory}/ ${
+          ${
+            if mod-definition.environment-statement != null then
+              (mod-definition.environment-statement headless-directory)
+            else
+              "ResonitePath=${headless-directory}/"
+          } ${
             lib.getExe cfg.dotnet.sdk
           } publish -o $PUBLISH_DIR /nowarn:NETSDK1194
 
-          mkdir -p ${mod-builds-cache-directory}/
-          mv $PUBLISH_DIR/ResoniteModLoader.dll ${mod-builds-cache-directory}/
-          mv $PUBLISH_DIR/0Harmony.dll ${mod-builds-cache-directory}/
+          mv $PUBLISH_DIR/${mod-definition.name}.dll ${mod-builds-cache-directory}/
 
+          popd
           rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"
         fi
-      ''] ++ (if cfg.rml-mod-sources != null then
-        (map (mod-definition: ''
-          if [ ! -f "${mod-builds-cache-directory}/${mod-definition.name}.dll" ]; then
-            ${systemd-notify} --status="Building mod: ${mod-definition.name}..."
 
-            SOURCE_DIR=$(mktemp -d)
-            PUBLISH_DIR=$(mktemp -d)
-            trap 'rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"' EXIT
-
-            cp -r ${mod-definition.src}/. $SOURCE_DIR/
-            chmod -R 777 $SOURCE_DIR
-            pushd $SOURCE_DIR
-            ${
-              if mod-definition.environment-statement != null then
-                (mod-definition.environment-statement headless-directory)
-              else
-                "ResonitePath=${headless-directory}/"
-            } ${
-              lib.getExe cfg.dotnet.sdk
-            } publish -o $PUBLISH_DIR /nowarn:NETSDK1194
-
-            mv $PUBLISH_DIR/${mod-definition.name}.dll ${mod-builds-cache-directory}/
-
-            popd
-            rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"
-          fi
-
-          cp ${mod-builds-cache-directory}/${mod-definition.name}.dll ${output-directory}/
-        '') cfg.rml-mod-sources)
-      else
-        [ ])))
+        cp ${mod-builds-cache-directory}/${mod-definition.name}.dll ${headless-directory}/rml_mods/
+      '') cfg.rml-mod-sources)
     else
-      "";
+      [ ])))
+  else
+    "";
 
   patchelf-command = ''
     ${
@@ -230,8 +232,6 @@ let
     '')}
 
     ${(if cfg.enable-rml then ''
-      ${build-rml-mods "${headless-directory}/rml_mods/"}
-
       mkdir -p ${headless-directory}/Libraries
       mkdir -p ${headless-directory}/rml_libs
       mkdir -p ${headless-directory}/rml_config
@@ -242,8 +242,17 @@ let
       chmod -R 770 ${headless-directory}/rml_config
       chmod -R 770 ${headless-directory}/rml_mods
 
-      cp ${mod-builds-cache-directory}/ResoniteModLoader.dll ${headless-directory}/Libraries/
-      cp ${mod-builds-cache-directory}/0Harmony.dll ${headless-directory}/rml_libs/
+      rm -rf ${headless-directory}/Libraries
+      rm -rf ${headless-directory}/rml_libs
+      rm -rf ${headless-directory}/rml_config
+      rm -rf ${headless-directory}/rml_mods
+
+      mkdir -p ${headless-directory}/Libraries
+      mkdir -p ${headless-directory}/rml_libs
+      mkdir -p ${headless-directory}/rml_config
+      mkdir -p ${headless-directory}/rml_mods
+
+      ${build-rml-mods}
 
       # Loop through and copy each path securely
       ${lib.concatMapStringsSep "\n" (p: ''
