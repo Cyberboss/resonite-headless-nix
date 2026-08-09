@@ -386,9 +386,11 @@ in {
     };
 
     dotnet = lib.mkOption {
-      type = lib.types.path;
+      type = lib.types.anything;
       default = pkgs.dotnetCorePackages.dotnet_10;
-      description = "Path to the dotnet executable to use for building.";
+      example = lib.literalExpression "pkgs.dotnetCorePackages.dotnet_10";
+      description =
+        "The dotnet version set to use for building mods and running Resonite.";
     };
 
     rml-mod-sources = lib.mkOption {
