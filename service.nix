@@ -169,9 +169,6 @@ let
     set +a
     set -x
 
-    echo "Remove old state dir"
-    rm -rf /var/lib/${service-name}
-
     ${(if !cfg.use-steam then
       "echo 'Steam support is currently disabled! Resonite will not update!'"
     else ''
