@@ -24,14 +24,12 @@ let
 
   jsonFormat = pkgs.formats.json { };
 
-  state-directory-name = service-name;
-  state-directory = "/var/lib/${state-directory-name}";
   cache-directory-name = service-name;
   cache-directory = "/var/cache/${cache-directory-name}";
 
-  resonite-data-directory = "${state-directory}/data";
+  resonite-data-directory = "${cache-directory}/data";
   resonite-cache-directory = "${cache-directory}/cache";
-  runtime-directory = "${state-directory}/depot";
+  runtime-directory = "${cache-directory}/depot";
   headless-directory = "${runtime-directory}/Headless";
   working-directory = "/var/run/${service-name}";
   working-manifest-directory = "${working-directory}/manifest";
@@ -47,6 +45,58 @@ let
   cmp = "${pkgs.diffutils}/bin/cmp";
 
   update-check = "${service-name}-update";
+
+  mod-builds-cache-directory = "${cache-directory}/mod_sources";
+  build-rml-mods = output-directory:
+    if cfg.enable-rml then
+      (lib.concatMapStringsSep "\n" [''
+        if [ ! -f "${mod-builds-cache-directory}/ResoniteModLoader.dll" || ! -f "${mod-builds-cache-directory}/0Harmony.dll" ]; then
+          ${systemd-notify} --status="Building ResoniteModLoader..."
+
+          PUBLISH_DIR=$(mktemp -d)
+          trap 'rm -rf "$PUBLISH_DIR"' EXIT
+          cp -r ${mod-definition.src} $PUBLISH_DIR/
+          pushd $PUBLISH_DIR
+          ResonitePath=${headless-directory} && ${cfg.dotnet} publish -o $PUBLISH_DIR
+
+          mkdir -p ${mod-builds-cache-directory}/
+          mv $PUBLISH_DIR/ResoniteModLoader.dll ${mod-builds-cache-directory}/
+          mv $PUBLISH_DIR/0Harmony.dll ${mod-builds-cache-directory}/
+
+          rm -rf $PUBLISH_DIR
+        fi
+
+        mkdir -p ${headless-directory}/Libraries
+        mkdir -p ${headless-directory}/rml_mods
+        mkdir -p ${headless-directory}/rml_libs
+
+        cp ${mod-builds-cache-directory}/ResoniteModLoader.dll ${headless-directory}/Libraries/
+        cp ${mod-builds-cache-directory}/0Harmony.dll ${headless-directory}/rml_libs/
+      ''] ++ (if cfg.rml-mod-sources != null then
+        (map (mod-definition: ''
+          if [ ! -f "${mod-builds-cache-directory}/${mod-definition.name}.dll" ]; then
+            ${systemd-notify} --status="Building mod: ${mod-definition.name}..."
+
+            PUBLISH_DIR=$(mktemp -d)
+            trap 'rm -rf "$PUBLISH_DIR"' EXIT
+
+            cp -r ${mod-definition.src} $PUBLISH_DIR/
+            pushd $PUBLISH_DIR
+            ResonitePath=${headless-directory} && ${cfg.dotnet} publish -o $PUBLISH_DIR
+
+            mkdir -p ${mod-builds-cache-directory}/
+            mv $PUBLISH_DIR/${mod-definition.name}.dll ${mod-builds-cache-directory}/
+
+            popd
+            rm -rf $PUBLISH_DIR
+          fi
+
+          cp ${mod-builds-cache-directory}/${mod-definition.name}.dll ${output-directory}/
+        '') cfg.rml-mod-sources)
+      else
+        [ ]))
+    else
+      "";
 
   patchelf-command = ''
     ${
@@ -116,6 +166,9 @@ let
     set +a
     set -x
 
+    echo "Remove old state dir"
+    rm -rf /var/lib/${service-name}
+
     ${(if !cfg.use-steam then
       "echo 'Steam support is currently disabled! Resonite will not update!'"
     else ''
@@ -169,27 +222,34 @@ let
           else
             "")
         }
-        ${
-          (if cfg.enable-rml then
-            "cp -rf ${rml}/* ${headless-directory}/ && chmod 770 ${headless-directory}/rml_mods && chmod 770 ${headless-directory}/rml_libs && chmod -R 770 ${headless-directory}/rml_libs/ && rm -rf ${headless-directory}/rml_config && mkdir ${headless-directory}/rml_config && chmod -R 770 ${headless-directory}/rml_config && chmod 770 ${headless-directory}/Libraries && chmod -R 770 ${headless-directory}/Libraries/"
-          else
-            "")
-        }
 
         cp ${working-manifest-directory}/* ${runtime-directory}/
       fi
     '')}
 
-    # Loop through and copy each path securely
-    ${lib.concatMapStringsSep "\n" (p: ''
-      echo "Copying ${toString p} to ${headless-directory}/rml_mods/..."
-      cp -f "${toString p}" "${headless-directory}/rml_mods/"
-    '') cfg.rml-mods}
-    ${lib.concatMapStringsSep "\n" (p: ''
+    ${(if cfg.enable-rml then ''
+      ${build-rml-mods "${headless-directory}/rml_mods/"}
 
-      echo "Copying ${toString p} to ${headless-directory}/rml_config/..."
-      cp -f "${toString p}" "${headless-directory}/rml_config/"
-    '') cfg.rml-configs}
+      # Loop through and copy each path securely
+      ${lib.concatMapStringsSep "\n" (p: ''
+        echo "Copying ${toString p} to ${headless-directory}/rml_mods/..."
+        cp -f "${toString p}" "${headless-directory}/rml_mods/"
+      '') cfg.rml-mods}
+      ${lib.concatMapStringsSep "\n" (p: ''
+        echo "Copying ${toString p} to ${headless-directory}/rml_config/..."
+        cp -f "${toString p}" "${headless-directory}/rml_config/"
+      '') cfg.rml-configs}
+
+      chmod 770 ${headless-directory}/rml_mods
+      chmod 770 ${headless-directory}/rml_libs
+      chmod -R 770 ${headless-directory}/rml_libs/
+      rm -rf ${headless-directory}/rml_config
+      mkdir ${headless-directory}/rml_config
+      chmod -R 770 ${headless-directory}/rml_config
+      chmod 770 ${headless-directory}/Libraries
+      chmod -R 770 ${headless-directory}/Libraries/
+    '' else
+      "")}
 
     cd ${headless-directory}
 
@@ -306,6 +366,44 @@ in {
       '';
     };
 
+    rml-source = lib.mkOption {
+      type = lib.types.path;
+      default = pkgs.fetchFromGitHub {
+        owner = "resonite-modding-group";
+        repo = "ResoniteModLoader";
+        rev = "5.0.1";
+        hash = "";
+      };
+      description = "Source path to ResoniteModLoader.";
+    };
+
+    dotnet = lib.mkOption {
+      type = lib.types.path;
+      default = lib.getExe pkgs.dotnetCorePackages.sdk_10_0;
+      description = "Path to the dotnet executable to use for building.";
+    };
+
+    rml-mod-sources = lib.mkOption {
+      type = lib.types.nullOr (lib.types.listOf lib.types.submodule {
+        options = {
+          name = lib.mkOption {
+            type = lib.types.str;
+            description = "Name of the mod library and output .dll.";
+            example = "MyMod";
+          };
+          src = lib.mkOption {
+            type = lib.types.path;
+            description =
+              "Source code for the mod. Should accept $(ResonitePath) as an environment variable to specify the path to the latest resonite source code";
+          };
+        };
+      });
+      default = null;
+      description = ''
+        A list of ResoniteModLoader mod sources to install.
+      '';
+    };
+
     rml-configs = lib.mkOption {
       type = lib.types.listOf lib.types.path;
       default = [ ];
@@ -352,7 +450,6 @@ in {
             TimeoutAbortSec = "10m";
             LogsDirectory = service-name;
             RuntimeDirectory = service-name;
-            StateDirectory = state-directory-name;
             CacheDirectory = cache-directory-name;
             WorkingDirectory = working-directory;
             KillSignal =

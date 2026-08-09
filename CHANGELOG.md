@@ -7,10 +7,14 @@ and this project adheres to Semantic Versioning ([SemVer]).
 
 ## [Unreleased]
 
+### Added
+
+- Build RML from source. [@Cyberboss]
+- Option to build mods from source [@Cyberboss]
+
 ### Changes
 
-- Moved state directory from the service user account's home directory to `/var/lib/resonite-headless`. [@Cyberboss]
-- Moved cache directory to `/var/cache/resonite-headless`. [@Cyberboss]
+- Moved all state from the service user account's home directory to `/var/cache/resonite-headless`. [@Cyberboss]
 
 ### Fixed
 
