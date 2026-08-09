@@ -53,17 +53,19 @@ let
         if [ ! -f "${mod-builds-cache-directory}/ResoniteModLoader.dll" || ! -f "${mod-builds-cache-directory}/0Harmony.dll" ]; then
           ${systemd-notify} --status="Building ResoniteModLoader..."
 
+          SOURCE_DIR=$(mktemp -d)
           PUBLISH_DIR=$(mktemp -d)
-          trap 'rm -rf "$PUBLISH_DIR"' EXIT
-          cp -r ${cfg.rml-source} $PUBLISH_DIR/
-          pushd $PUBLISH_DIR
-          ResonitePath=${headless-directory} && ${cfg.dotnet} publish -o $PUBLISH_DIR
+          trap 'rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"' EXIT
+
+          cp -r ${cfg.rml-source} $SOURCE_DIR/
+          pushd $SOURCE_DIR
+          ResonitePath=${headless-directory} && ${cfg.dotnet} publish -o 
 
           mkdir -p ${mod-builds-cache-directory}/
           mv $PUBLISH_DIR/ResoniteModLoader.dll ${mod-builds-cache-directory}/
           mv $PUBLISH_DIR/0Harmony.dll ${mod-builds-cache-directory}/
 
-          rm -rf $PUBLISH_DIR
+          rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"
         fi
 
         mkdir -p ${headless-directory}/Libraries
@@ -77,18 +79,19 @@ let
           if [ ! -f "${mod-builds-cache-directory}/${mod-definition.name}.dll" ]; then
             ${systemd-notify} --status="Building mod: ${mod-definition.name}..."
 
+            SOURCE_DIR=$(mktemp -d)
             PUBLISH_DIR=$(mktemp -d)
-            trap 'rm -rf "$PUBLISH_DIR"' EXIT
+            trap 'rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"' EXIT
 
-            cp -r ${mod-definition.src} $PUBLISH_DIR/
-            pushd $PUBLISH_DIR
+            cp -r ${mod-definition.src} $SOURCE_DIR/
+            pushd $SOURCE_DIR
             ResonitePath=${headless-directory} && ${cfg.dotnet} publish -o $PUBLISH_DIR
 
             mkdir -p ${mod-builds-cache-directory}/
             mv $PUBLISH_DIR/${mod-definition.name}.dll ${mod-builds-cache-directory}/
 
             popd
-            rm -rf $PUBLISH_DIR
+            rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"
           fi
 
           cp ${mod-builds-cache-directory}/${mod-definition.name}.dll ${output-directory}/
