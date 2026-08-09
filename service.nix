@@ -384,7 +384,7 @@ in {
     };
 
     rml-mod-sources = lib.mkOption {
-      type = lib.types.nullOr (lib.types.listOf lib.types.submodule {
+      type = lib.types.nullOr (lib.types.listOf (lib.types.submodule {
         options = {
           name = lib.mkOption {
             type = lib.types.str;
@@ -397,7 +397,7 @@ in {
               "Source code for the mod. Should accept $(ResonitePath) as an environment variable to specify the path to the latest resonite source code";
           };
         };
-      });
+      }));
       default = null;
       description = ''
         A list of ResoniteModLoader mod sources to install.
