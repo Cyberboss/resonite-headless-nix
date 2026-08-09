@@ -59,7 +59,9 @@ let
           cp -r ${cfg.rml-source}/. $SOURCE_DIR/
           chmod -R 777 $SOURCE_DIR
           pushd $SOURCE_DIR
-          ResonitePath=${headless-directory}/ ${cfg.dotnet} publish -o $PUBLISH_DIR
+          ResonitePath=${headless-directory}/ ${
+            lib.getExe cfg.dotnet.sdk
+          } publish -o $PUBLISH_DIR /nowarn:NETSDK1194
 
           mkdir -p ${mod-builds-cache-directory}/
           mv $PUBLISH_DIR/ResoniteModLoader.dll ${mod-builds-cache-directory}/
@@ -87,7 +89,14 @@ let
             cp -r ${mod-definition.src}/. $SOURCE_DIR/
             chmod -R 777 $SOURCE_DIR
             pushd $SOURCE_DIR
-            ResonitePath=${headless-directory}/ ${cfg.dotnet} publish -o $PUBLISH_DIR
+            ${
+              if mod-definition.environment-statement != null then
+                (mod-definition.environment-statement headless-directory)
+              else
+                "ResonitePath=${headless-directory}/"
+            } ${
+              lib.getExe cfg.dotnet.sdk
+            } publish -o $PUBLISH_DIR /nowarn:NETSDK1194
 
             mkdir -p ${mod-builds-cache-directory}/
             mv $PUBLISH_DIR/${mod-definition.name}.dll ${mod-builds-cache-directory}/
@@ -262,7 +271,7 @@ let
       "")}
 
     exec ${
-      lib.getExe pkgs.dotnetCorePackages.dotnet_10.runtime
+      lib.getExe cfg.dotnet.runtime
     } ${headless-directory}/Resonite.dll -HeadlessConfig ${runtime-config-path} ${
       (if cfg.enable-rml then
         "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll"
@@ -378,7 +387,7 @@ in {
 
     dotnet = lib.mkOption {
       type = lib.types.path;
-      default = lib.getExe pkgs.dotnetCorePackages.sdk_10_0;
+      default = pkgs.dotnetCorePackages.dotnet_10;
       description = "Path to the dotnet executable to use for building.";
     };
 
@@ -394,6 +403,13 @@ in {
             type = lib.types.path;
             description =
               "Source code for the mod. Should accept $(ResonitePath) as an environment variable to specify the path to the latest resonite source code";
+          };
+          environment-statement = lib.mkOption {
+            type = lib.types.nullOr (lib.types.functionTo lib.types.str);
+            default = null;
+            example = headless-path: "HeadlessPath=${headless-path}";
+            description =
+              "A function taking the full path to the resonite headless binary directory and returning a pre-command environment set string to use for building the mod";
           };
         };
       }));
