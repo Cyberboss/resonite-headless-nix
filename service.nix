@@ -47,7 +47,8 @@ let
 
   mods-cache-root = "${cache-directory}/mod_sources";
   mod-builds-cache-directory = "${mods-cache-root}/${mods-hash}";
-  mod-hash = builtins.hashString "sha256" (builtins.toJSON cfg.rml-mod-sources);
+  mods-hash =
+    builtins.hashString "sha256" (builtins.toJSON cfg.rml-mod-sources);
   build-rml-mods = if cfg.enable-rml then
     (lib.concatStringsSep "\n" ([''
       if [ ! -f "${mod-builds-cache-directory}/ResoniteModLoader.dll" ] || [ ! -f "${mod-builds-cache-directory}/0Harmony.dll" ]; then
