@@ -58,8 +58,8 @@ let
           trap 'rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"' EXIT
 
           cp -r ${cfg.rml-source}/. $SOURCE_DIR/
+          chmod -R 777 $SOURCE_DIR
           pushd $SOURCE_DIR
-          chmod -R 666 .
           ResonitePath=${headless-directory} && ${cfg.dotnet} publish -o $PUBLISH_DIR
 
           mkdir -p ${mod-builds-cache-directory}/
@@ -85,8 +85,8 @@ let
             trap 'rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"' EXIT
 
             cp -r ${mod-definition.src}/. $SOURCE_DIR/
+            chmod -R 777 $SOURCE_DIR
             pushd $SOURCE_DIR
-            chmod -R 666 .
             ResonitePath=${headless-directory} && ${cfg.dotnet} publish -o $PUBLISH_DIR
 
             mkdir -p ${mod-builds-cache-directory}/
