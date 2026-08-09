@@ -38,7 +38,6 @@ let
 
   config-filename = "${service-name}.config.json";
   runtime-config-path = "${working-directory}/${config-filename}";
-  rml-config-path = "${working-directory}/rml_config";
 
   log-directory-path = "/var/log/${service-name}";
 
@@ -238,19 +237,16 @@ let
         echo "Copying ${toString p} to ${headless-directory}/rml_mods/..."
         cp -f "${toString p}" "${headless-directory}/rml_mods/"
       '') cfg.rml-mods}
+
       ${lib.concatMapStringsSep "\n" (p: ''
         echo "Copying ${toString p} to ${headless-directory}/rml_config/..."
         cp -f "${toString p}" "${headless-directory}/rml_config/"
       '') cfg.rml-configs}
 
-      chmod 770 ${headless-directory}/rml_mods
-      chmod 770 ${headless-directory}/rml_libs
-      chmod -R 770 ${headless-directory}/rml_libs/
-      rm -rf ${headless-directory}/rml_config
-      mkdir ${headless-directory}/rml_config
+      chmod -R 770 ${headless-directory}/rml_mods
+      chmod -R 770 ${headless-directory}/rml_libs
       chmod -R 770 ${headless-directory}/rml_config
-      chmod 770 ${headless-directory}/Libraries
-      chmod -R 770 ${headless-directory}/Libraries/
+      chmod -R 770 ${headless-directory}/Libraries
     '' else
       "")}
 
