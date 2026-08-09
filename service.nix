@@ -49,7 +49,7 @@ let
   build-rml-mods = output-directory:
     if cfg.enable-rml then
       (lib.concatStringsSep "\n" ([''
-        if [ ! -f "${mod-builds-cache-directory}/ResoniteModLoader.dll" || ! -f "${mod-builds-cache-directory}/0Harmony.dll" ]; then
+        if [ ! -f "${mod-builds-cache-directory}/ResoniteModLoader.dll" ] || [ ! -f "${mod-builds-cache-directory}/0Harmony.dll" ]; then
           ${systemd-notify} --status="Building ResoniteModLoader..."
 
           SOURCE_DIR=$(mktemp -d)
