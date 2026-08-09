@@ -372,7 +372,7 @@ in {
         owner = "resonite-modding-group";
         repo = "ResoniteModLoader";
         rev = "5.0.1";
-        hash = "";
+        hash = "sha256-lASxB15ENaQvzeOTqXk7nreBp2Y2fGy4gK/CQwd6D4Q=";
       };
       description = "Source path to ResoniteModLoader.";
     };
