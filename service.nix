@@ -93,12 +93,7 @@ let
             cp -r ${mod-definition.src}/. $SOURCE_DIR/
             chmod -R 777 $SOURCE_DIR
             pushd $SOURCE_DIR
-            ${
-              if mod-definition.environment-statement != null then
-                (mod-definition.environment-statement headless-directory)
-              else
-                "ResonitePath=${headless-directory}/"
-            } ${
+            ${mod-definition.environment-statement headless-directory} ${
               lib.getExe cfg.dotnet.sdk
             } publish -o $PUBLISH_DIR /nowarn:NETSDK1194
 
@@ -431,9 +426,10 @@ in {
               "Source code for the mod. Should accept $(ResonitePath) as an environment variable to specify the path to the latest resonite source code";
           };
           environment-statement = lib.mkOption {
-            type = lib.types.nullOr (lib.types.functionTo lib.types.str);
-            default = null;
-            example = headless-path: "HeadlessPath=${headless-path}";
+            type = lib.types.functionTo lib.types.str;
+            default = headless-directory: "ResonitePath=${headless-directory}/";
+            example = lib.literalExpression
+              ''headless-directory: "HeadlessPath=''${headless-directory}"'';
             description =
               "A function taking the full path to the resonite headless binary directory and returning a pre-command environment set string to use for building the mod";
           };
