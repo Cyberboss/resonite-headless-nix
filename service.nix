@@ -104,7 +104,7 @@ let
             rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"
           fi
 
-          cp ${mod-builds-cache-directory}/${mod-definition.name}.dll ${headless-directory}/rml_mods/
+          cp ${mod-hashed-dir}/${mod-definition.name}.dll ${headless-directory}/rml_mods/
         '') cfg.rml-mod-sources)
     else
       [ ])))
