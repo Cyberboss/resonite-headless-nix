@@ -50,8 +50,8 @@ let
   mods-hash = builtins.hashString "sha256" (lib.concatStringsSep "MOD-BREAK"
     (map (mod-definition:
       "${mod-definition.name} ${
-        if mod-definition.environment-spec != null then
-          "${mod-definition.environment-spec}-HASH"
+        if mod-definition.environment-statement != null then
+          "${mod-definition.environment-statement "ForHash"}-HASH"
         else
           "NULL"
       } ${mod-definition.src}") cfg.rml-mod-sources));
