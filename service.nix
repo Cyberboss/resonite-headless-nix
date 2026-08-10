@@ -45,16 +45,7 @@ let
 
   update-check = "${service-name}-update";
 
-  mods-cache-root = "${cache-directory}/mod_sources";
-  mod-builds-cache-directory = "${mods-cache-root}/${mods-hash}";
-  mods-hash = builtins.hashString "sha256" (lib.concatStringsSep "MOD-BREAK"
-    (map (mod-definition:
-      "${mod-definition.name} ${
-        if mod-definition.environment-statement != null then
-          "${mod-definition.environment-statement "ForHash"}-HASH"
-        else
-          "NULL"
-      } ${mod-definition.src}") cfg.rml-mod-sources));
+  mod-builds-cache-directory = "${cache-directory}/mod_sources";
   build-rml-mods = if cfg.enable-rml then
     (lib.concatStringsSep "\n" ([''
       if [ ! -f "${mod-builds-cache-directory}/ResoniteModLoader.dll" ] || [ ! -f "${mod-builds-cache-directory}/0Harmony.dll" ]; then
@@ -71,7 +62,7 @@ let
           lib.getExe cfg.dotnet.sdk
         } publish -o $PUBLISH_DIR /nowarn:NETSDK1194
 
-        rm -rf ${mods-cache-root}
+        rm -rf ${mod-builds-cache-directory}
         mkdir -p ${mod-builds-cache-directory}/
         mv $PUBLISH_DIR/ResoniteModLoader.dll ${mod-builds-cache-directory}/
         mv $PUBLISH_DIR/0Harmony.dll ${mod-builds-cache-directory}/
@@ -82,34 +73,44 @@ let
       cp ${mod-builds-cache-directory}/ResoniteModLoader.dll ${headless-directory}/Libraries/
       cp ${mod-builds-cache-directory}/0Harmony.dll ${headless-directory}/rml_libs/
     ''] ++ (if cfg.rml-mod-sources != null then
-      (map (mod-definition: ''
-        if [ ! -f "${mod-builds-cache-directory}/${mod-definition.name}.dll" ]; then
-          ${systemd-notify} --status="Building mod: ${mod-definition.name}..."
+      (map (mod-definition:
+        let
+          mod-hash = builtins.hashString "sha256" "${mod-definition.name} ${
+              if mod-definition.environment-statement != null then
+                "${mod-definition.environment-statement "ForHash"}-HASH"
+              else
+                "NULL"
+            } ${mod-definition.src}";
+          mod-hashed-dir = "${mod-builds-cache-directory}/${mod-hash}";
+        in ''
+          if [ ! -f "${mod-hashed-dir}/${mod-definition.name}.dll" ]; then
+            ${systemd-notify} --status="Building mod: ${mod-definition.name}..."
 
-          SOURCE_DIR=$(mktemp -d)
-          PUBLISH_DIR=$(mktemp -d)
-          trap 'rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"' EXIT
+            SOURCE_DIR=$(mktemp -d)
+            PUBLISH_DIR=$(mktemp -d)
+            trap 'rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"' EXIT
 
-          cp -r ${mod-definition.src}/. $SOURCE_DIR/
-          chmod -R 777 $SOURCE_DIR
-          pushd $SOURCE_DIR
-          ${
-            if mod-definition.environment-statement != null then
-              (mod-definition.environment-statement headless-directory)
-            else
-              "ResonitePath=${headless-directory}/"
-          } ${
-            lib.getExe cfg.dotnet.sdk
-          } publish -o $PUBLISH_DIR /nowarn:NETSDK1194
+            cp -r ${mod-definition.src}/. $SOURCE_DIR/
+            chmod -R 777 $SOURCE_DIR
+            pushd $SOURCE_DIR
+            ${
+              if mod-definition.environment-statement != null then
+                (mod-definition.environment-statement headless-directory)
+              else
+                "ResonitePath=${headless-directory}/"
+            } ${
+              lib.getExe cfg.dotnet.sdk
+            } publish -o $PUBLISH_DIR /nowarn:NETSDK1194
 
-          mv $PUBLISH_DIR/${mod-definition.name}.dll ${mod-builds-cache-directory}/
+            mkdir -p ${mod-hashed-dir}
+            mv $PUBLISH_DIR/${mod-definition.name}.dll ${mod-hashed-dir}/
 
-          popd
-          rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"
-        fi
+            popd
+            rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"
+          fi
 
-        cp ${mod-builds-cache-directory}/${mod-definition.name}.dll ${headless-directory}/rml_mods/
-      '') cfg.rml-mod-sources)
+          cp ${mod-builds-cache-directory}/${mod-definition.name}.dll ${headless-directory}/rml_mods/
+        '') cfg.rml-mod-sources)
     else
       [ ])))
   else
@@ -204,7 +205,7 @@ let
         echo "Manifest mismatch!"
         ${systemd-notify} --status="Clearing old depot..."
 
-        rm -rf ${runtime-directory} ${mods-cache-root}
+        rm -rf ${runtime-directory} ${mod-builds-cache-directory}
         ${systemd-notify} --status="Downloading new depot..."
         ${download-command} ${runtime-directory}
 
