@@ -47,8 +47,14 @@ let
 
   mods-cache-root = "${cache-directory}/mod_sources";
   mod-builds-cache-directory = "${mods-cache-root}/${mods-hash}";
-  mods-hash =
-    builtins.hashString "sha256" (builtins.toJSON cfg.rml-mod-sources);
+  mods-hash = builtins.hashString "sha256" (lib.concatStringsSep "MOD-BREAK"
+    (map (mod-definition:
+      "${mod-definition.name} ${
+        if mod-definition.environment-spec != null then
+          "${mod-definition.environment-spec}-HASH"
+        else
+          "NULL"
+      } ${mod-definition.src}") cfg.rml-mod-sources));
   build-rml-mods = if cfg.enable-rml then
     (lib.concatStringsSep "\n" ([''
       if [ ! -f "${mod-builds-cache-directory}/ResoniteModLoader.dll" ] || [ ! -f "${mod-builds-cache-directory}/0Harmony.dll" ]; then
