@@ -220,7 +220,7 @@ let
             continue
           fi
           echo "Patching $file"
-          chmod 770 $file
+          chmod 770 "$file"
           set +e
           ${patchelf-command} $file
           set -e
