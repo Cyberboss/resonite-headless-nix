@@ -478,7 +478,7 @@ in {
             User = cfg.username;
             Type = "notify";
             NotifyAccess = "all";
-            ExecStart = "${init-script}/bin/${init-script-name}";
+            ExecStart = lib.getExe init-script;
             TimeoutStartSec = "30m";
             Restart = "always";
             RestartSec = "10s";
