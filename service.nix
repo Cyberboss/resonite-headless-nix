@@ -120,7 +120,7 @@ let
   download-command =
     "${lib.getExe depotdownloader} -app 2519830 -beta headless -dir ";
 
-  update-check-script = pkgs.writeShellScriptBin update-check ''
+  update-check-script = pkgs.writeShellScriptBin "${update-check}.sh" ''
     set -aeuo pipefail
     echo "Sourcing ${cfg.depotdownloader-env-file}"
     source ${cfg.depotdownloader-env-file}
@@ -155,7 +155,7 @@ let
   systemd-notify = "${pkgs.systemd}/bin/systemd-notify";
 
   init-script-name = "${service-name}-update-and-start";
-  init-script = pkgs.writeShellScriptBin init-script-name ''
+  init-script = pkgs.writeShellScriptBin "${init-script-name}.sh" ''
     set -aeuo pipefail
 
     echo "Sourcing ${cfg.credentials-file}"
