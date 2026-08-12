@@ -67,6 +67,7 @@ let
         mv $PUBLISH_DIR/ResoniteModLoader.dll ${mod-builds-cache-directory}/
         mv $PUBLISH_DIR/0Harmony.dll ${mod-builds-cache-directory}/
 
+        popd
         rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"
       fi
 
