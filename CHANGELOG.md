@@ -10,7 +10,8 @@ and this project adheres to Semantic Versioning ([SemVer]).
 ### Added
 
 - Build RML from source. [@Cyberboss]
-- Option to build mods from source [@Cyberboss]
+- Option to build mods from source. [@Cyberboss]
+- QUIC support. [@Cyberboss]
 
 ### Changes
 

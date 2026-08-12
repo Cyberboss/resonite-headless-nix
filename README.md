@@ -35,7 +35,7 @@ A Nixpkgs reference is, for all intents and purposes, also required.
         config-json = {
             # See https://wiki.resonite.com/Headless_server_software/Configuration_file
             # This structure maps directly to the JSON with some exceptions:
-            # loginCredential and loginPassword are configured later using credentials-file and are not allowed
+            # loginCredential, loginPassword, and QUIC public IP are configured later using credentials-file and are not allowed
             # dataFolder and cacheFolder map to the state directory under /var/lib/resonite-headless/data and /var/lib/resonite-headless/cache respectively
             # logFolder maps to /var/log/resonite-headless by default
             
@@ -67,6 +67,7 @@ DEPOT_DOWNLOADER_BETA_PASSWORD=CurrentResoniteHeadlessCode_SupportYDMSOnStripe!
 ```env
 RESONITE_USERNAME="My Resonite Headless Account Username"
 RESONITE_PASSWORD="My Resonite Headless Account Password"
+QUIC_PUBLIC_IP=127.0.0.1
 ```
 
 See a more complete example with mods [here](https://github.com/Cyberboss/cyberservermkii/blob/main/system/resonite.nix).

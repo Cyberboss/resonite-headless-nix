@@ -168,11 +168,11 @@ let
         echo "ERROR: RESONITE_PASSWORD is required in ${cfg.credentials-file} but missing." >&2
         exit 1
     fi
-
+      
     echo "Substituting config from ${config-json} to ${runtime-config-path}"
     ${
       lib.getExe pkgs.jq
-    } --arg user "$RESONITE_USERNAME" --arg pass "$RESONITE_PASSWORD"  '. + {loginCredential: $user, loginPassword: $pass}' ${config-json} > ${runtime-config-path}
+    } --arg user "$RESONITE_USERNAME" --arg pass "$RESONITE_PASSWORD" '. + {loginCredential: $user, loginPassword: $pass}' ${config-json} > ${runtime-config-path}
 
     echo "Sourcing ${cfg.depotdownloader-env-file}"
     source ${cfg.depotdownloader-env-file}
@@ -279,6 +279,15 @@ let
     '' else
       "")}
 
+    # Copy the system's libmsquic to every runtime directory just to be sure
+    for runtime_dir in ${headless-directory}/runtimes/*; do
+      rid=$(basename "$runtime_dir")
+      if [ -d "${headless-directory}/runtimes/$rid/native" ]; then
+        rm -f ${headless-directory}/runtimes/$rid/native/libmsquic.so
+        ln -s ${pkgs.libmsquic}/lib/libmsquic.so ${headless-directory}/runtimes/$rid/native/libmsquic.so
+      fi
+    done
+
     cd ${headless-directory}
 
     ${(if !cfg.disable-ready-notify then
@@ -292,11 +301,16 @@ let
 
     exec ${
       lib.getExe cfg.dotnet.runtime
-    } ${headless-directory}/Resonite.dll -HeadlessConfig ${runtime-config-path} ${
-      (if cfg.enable-rml then
-        "-LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll"
+    } ${headless-directory}/Resonite.dll -HeadlessConfig ${runtime-config-path}${
+      if cfg.enable-rml then
+        " -LoadAssembly ${headless-directory}/Libraries/ResoniteModLoader.dll"
       else
-        "")
+        ""
+    }${
+      if cfg.engine-config != null then
+        " -EngineConfig ${cfg.engine-config}"
+      else
+        ""
     }
   '';
 
@@ -403,6 +417,12 @@ in {
         hash = "sha256-lASxB15ENaQvzeOTqXk7nreBp2Y2fGy4gK/CQwd6D4Q=";
       };
       description = "Source path to ResoniteModLoader.";
+    };
+
+    engine-config = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = "Path used to set the `-EngineConfig` parameter, if present";
     };
 
     dotnet = lib.mkOption {
