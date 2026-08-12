@@ -154,8 +154,8 @@ let
 
   systemd-notify = "${pkgs.systemd}/bin/systemd-notify";
 
-  init-script-name = "${service-name}-update-and-start";
-  init-script = pkgs.writeShellScriptBin "${init-script-name}.sh" ''
+  init-script-name = "${service-name}-update-and-start.sh";
+  init-script = pkgs.writeShellScriptBin init-script-name ''
     set -aeuo pipefail
 
     echo "Sourcing ${cfg.credentials-file}"
