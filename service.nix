@@ -299,6 +299,18 @@ let
     else
       "")}
 
+    ${
+      if cfg.engine-config != null then
+        "ENGINE_CONFIG=${cfg.engine-config}"
+      else
+        (if cfg.quic-wan-ip-file != null then ''
+          WAN_IP=$(tr -d '[:space:]' < "${cfg.quic-wan-ip-file}")
+          ENGINE_CONFIG=${working-directory}/EngineConfig.json
+          jq -n --arg ip "$WAN_IP" '{quicConfig: {publicIP: $ip}}' > $ENGINE_CONFIG
+        '' else
+          "")
+    }
+
     exec ${
       lib.getExe cfg.dotnet.runtime
     } ${headless-directory}/Resonite.dll -HeadlessConfig ${runtime-config-path}${
@@ -307,8 +319,8 @@ let
       else
         ""
     }${
-      if cfg.engine-config != null then
-        " -EngineConfig ${cfg.engine-config}"
+      if cfg.engine-config != null || cfg.quic-wan-ip-file != null then
+        " -EngineConfig $ENGINE_CONFIG"
       else
         ""
     }
@@ -422,7 +434,13 @@ in {
     engine-config = lib.mkOption {
       type = lib.types.nullOr lib.types.path;
       default = null;
-      description = "Path used to set the `-EngineConfig` parameter, if present";
+      description = "Path used to set the `-EngineConfig` parameter, if present. If set, this overwrites the generated engine config for quic-wan-ip-file";
+    };
+
+    quic-wan-ip-file = lib.mkOption {
+      type = lib.types.nonEmptyStr;
+      default = null;
+      description = "Path containing the WAN IP used to configure the QUIC engine config. No effect if engine-config is set.";
     };
 
     dotnet = lib.mkOption {
@@ -529,6 +547,15 @@ in {
             RuntimeDirectory = update-check;
           };
         };
+        "${service-name}-restart" =
+          lib.mkIf (cfg.quic-wan-ip-file != null && cfg.engine-config == null) {
+            description = "Restart ${service-name}";
+            serviceConfig = {
+              Type = "oneshot";
+              ExecStart =
+                "${pkgs.systemd}/bin/systemctl restart ${service-name}.service";
+            };
+          };
       };
       timers."${update-check}" = lib.mkIf cfg.use-steam {
         timerConfig = {
@@ -538,6 +565,16 @@ in {
         };
         wantedBy = [ "timers.target" ];
       };
+      paths."${service-name}-ip-watcher" =
+        lib.mkIf (cfg.quic-wan-ip-file != null && cfg.engine-config == null) {
+          description =
+            "Watch file for changes to ${cfg.quic-wan-ip-file} to restart ${service-name}";
+          wantedBy = [ "multi-user.target" ];
+          pathConfig = {
+            PathChanged = cfg.quic-wan-ip-file;
+            Unit = "${service-name}-restart.service";
+          };
+        };
     };
   };
 }
