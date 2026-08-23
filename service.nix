@@ -306,7 +306,9 @@ let
         (if cfg.quic-wan-ip-file != null then ''
           WAN_IP=$(tr -d '[:space:]' < "${cfg.quic-wan-ip-file}")
           ENGINE_CONFIG=${working-directory}/EngineConfig.json
-          jq -n --arg ip "$WAN_IP" '{quicConfig: {publicIP: $ip}}' > $ENGINE_CONFIG
+          ${
+            lib.getExe pkgs.jq
+          } -n --arg ip "$WAN_IP" '{quicConfig: {publicIP: $ip}}' > $ENGINE_CONFIG
         '' else
           "")
     }
