@@ -534,13 +534,8 @@ in {
               "SIGINT"; # Resonite doesn't respond to SIGTERM and dies immediately
             WatchdogSignal = "";
           };
-          restartTriggers = [
-            config-json
-            cfg.enable-rml
-            cfg.rml-mods
-            cfg.rml-source
-            cfg.auto-update-interval
-          ] ++ cfg.additional-restart-triggers ++ cfg.rml-mod-sources;
+          restartTriggers = [ config-json cfg.auto-update-interval ]
+            ++ cfg.additional-restart-triggers;
           wantedBy = [ "multi-user.target" ];
           wants = [ "network-online.target" ];
           after = [ "network-online.target" ];
