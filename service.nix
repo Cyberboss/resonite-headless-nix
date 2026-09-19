@@ -159,7 +159,7 @@ let
     rm -f "${force-file-path}"
   '';
 
-  force-file-path = "/var/run/${update-check}/force";
+  force-file-path = "/var/cache/${update-check}/force";
   force-update = pkgs.writeShellScriptBin "force-resonite-update" ''
     set -aeuo pipefail
 
@@ -567,6 +567,7 @@ in {
             Type = "oneshot";
             ExecStart = lib.getExe update-check-script;
             RuntimeDirectory = update-check;
+            CacheDirectory = update-check;
           };
         };
         "${service-name}-restart" =
