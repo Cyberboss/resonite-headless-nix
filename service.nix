@@ -159,7 +159,7 @@ let
     rm -f "${force-file-path}"
   '';
 
-  force-file-path = "/var/cache/${update-check}/force";
+  force-file-path = "/var/run/${update-check}/force";
   force-update = pkgs.writeShellScriptBin "force-resonite-update" ''
     set -aeuo pipefail
 
@@ -588,16 +588,27 @@ in {
         };
         wantedBy = [ "timers.target" ];
       };
-      paths."${service-name}-ip-watcher" =
-        lib.mkIf (cfg.quic-wan-ip-file != null && cfg.engine-config == null) {
+      paths = {
+        "${service-name}-ip-watcher" =
+          lib.mkIf (cfg.quic-wan-ip-file != null && cfg.engine-config == null) {
+            description =
+              "Watch file for changes to ${cfg.quic-wan-ip-file} to restart the ${service-name} service.";
+            wantedBy = [ "multi-user.target" ];
+            pathConfig = {
+              PathChanged = cfg.quic-wan-ip-file;
+              Unit = "${service-name}-restart.service";
+            };
+          };
+        "${update-check}-force-file-watcher}" = {
           description =
-            "Watch file for changes to ${cfg.quic-wan-ip-file} to restart ${service-name}";
+            "Watch file for changes to ${force-file-path} to run the ${update-check} service.";
           wantedBy = [ "multi-user.target" ];
           pathConfig = {
-            PathChanged = cfg.quic-wan-ip-file;
-            Unit = "${service-name}-restart.service";
+            PathChanged = force-file-path;
+            Unit = update-check;
           };
         };
+      };
     };
   };
 }
