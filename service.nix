@@ -148,8 +148,27 @@ let
       echo "Restarting headless!"
       systemctl restart --no-block ${service-name}
     else
-      echo "Up-to-date!"
+      if [ -f "${force-file-path}" ]; then
+        echo "No update, but force file found. Restarting headless!"
+        systemctl restart --no-block ${service-name}
+      else
+        echo "Up-to-date!"
+      fi
     fi
+
+    rm -f "${force-file-path}"
+  '';
+
+  force-file-path = "/run/${update-check}/force";
+  force-update = pkgs.writeShellScriptBin "force-resonite-update" ''
+    set -aeuo pipefail
+
+    if [ "$EUID" -ne 0 ]; then
+        echo "Please run as root or with sudo."
+        exit 1
+    fi
+
+    touch "${force-file-path}"
   '';
 
   systemd-notify = "${pkgs.systemd}/bin/systemd-notify";
@@ -509,6 +528,8 @@ in {
         home = cfg.home-directory;
       };
     };
+
+    environment.systemPackages = [ force-update ];
 
     systemd = {
       services = {
