@@ -159,7 +159,7 @@ let
     rm -f "${force-file-path}"
   '';
 
-  force-file-path = "/run/${update-check}/force";
+  force-file-path = "/var/run/${update-check}/force";
   force-update = pkgs.writeShellScriptBin "force-resonite-update" ''
     set -aeuo pipefail
 
