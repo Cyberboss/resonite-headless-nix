@@ -146,11 +146,11 @@ let
       cat ${update-working-directory}/manifest-post.txt
 
       echo "Restarting headless!"
-      systemctl restart --no-block ${service-name}
+      ${pkgs.systemd}/bin/systemctl restart --no-block ${service-name}
     else
       if [ -f "${force-file-path}" ]; then
         echo "No update, but force file found. Restarting headless!"
-        systemctl restart --no-block ${service-name}
+        ${pkgs.systemd}/bin/systemctl restart --no-block ${service-name}
       else
         echo "Up-to-date!"
       fi
@@ -170,6 +170,7 @@ let
 
     mkdir -p ${update-working-directory}
     touch "${force-file-path}"
+    ${pkgs.systemd}/bin/systemctl start ${update-check} 
   '';
 
   systemd-notify = "${pkgs.systemd}/bin/systemd-notify";
