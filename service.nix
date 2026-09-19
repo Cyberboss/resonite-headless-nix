@@ -599,14 +599,11 @@ in {
               Unit = "${service-name}-restart.service";
             };
           };
-        "${update-check}-force-file-watcher}" = {
+        "${update-check}" = {
           description =
             "Watch file for changes to ${force-file-path} to run the ${update-check} service.";
           wantedBy = [ "multi-user.target" ];
-          pathConfig = {
-            PathChanged = force-file-path;
-            Unit = update-check;
-          };
+          pathConfig.PathChanged = force-file-path;
         };
       };
     };
