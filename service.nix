@@ -27,8 +27,8 @@ let
   cache-directory-name = service-name;
   cache-directory = "/var/cache/${cache-directory-name}";
 
-  resonite-data-directory = "${cache-directory}/data";
-  resonite-cache-directory = "${cache-directory}/cache";
+  resonite-data-directory = "${working-directory}/data";
+  resonite-cache-directory = "${working-directory}/cache";
   runtime-directory = "${cache-directory}/depot";
   headless-directory = "${runtime-directory}/Headless";
   working-directory = "/var/run/${service-name}";
