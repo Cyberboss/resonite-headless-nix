@@ -46,9 +46,14 @@ let
   update-check = "${service-name}-update";
 
   mod-builds-cache-directory = "${cache-directory}/mod_sources";
+
+  rml-build-dir = "${mod-builds-cache-directory}/${rml-hash}";
+
+  rml-hash = builtins.hashString "sha256" "ResoniteModLoader ${cfg.rml-source}";
+
   build-rml-mods = if cfg.enable-rml then
     (lib.concatStringsSep "\n" ([''
-      if [ ! -f "${mod-builds-cache-directory}/ResoniteModLoader.dll" ] || [ ! -f "${mod-builds-cache-directory}/0Harmony.dll" ]; then
+      if [ ! -f "${rml-build-dir}/ResoniteModLoader.dll" ] || [ ! -f "${rml-build-dir}/0Harmony.dll" ]; then
         ${systemd-notify} --status="Building ResoniteModLoader..."
 
         SOURCE_DIR=$(mktemp -d)
@@ -63,16 +68,16 @@ let
         } publish -o $PUBLISH_DIR /nowarn:NETSDK1194
 
         rm -rf ${mod-builds-cache-directory}
-        mkdir -p ${mod-builds-cache-directory}/
-        mv $PUBLISH_DIR/ResoniteModLoader.dll ${mod-builds-cache-directory}/
-        mv $PUBLISH_DIR/0Harmony.dll ${mod-builds-cache-directory}/
+        mkdir -p ${rml-build-dir}/
+        mv $PUBLISH_DIR/ResoniteModLoader.dll ${rml-build-dir}/
+        mv $PUBLISH_DIR/0Harmony.dll ${rml-build-dir}/
 
         popd
         rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"
       fi
 
-      cp ${mod-builds-cache-directory}/ResoniteModLoader.dll ${headless-directory}/Libraries/
-      cp ${mod-builds-cache-directory}/0Harmony.dll ${headless-directory}/rml_libs/
+      cp ${rml-build-dir}/ResoniteModLoader.dll ${headless-directory}/Libraries/
+      cp ${rml-build-dir}/0Harmony.dll ${headless-directory}/rml_libs/
     ''] ++ (if cfg.rml-mod-sources != null then
       (map (mod-definition:
         let
