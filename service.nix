@@ -446,8 +446,8 @@ in {
       default = pkgs.fetchFromGitHub {
         owner = "resonite-modding-group";
         repo = "ResoniteModLoader";
-        rev = "5.0.1";
-        hash = "sha256-lASxB15ENaQvzeOTqXk7nreBp2Y2fGy4gK/CQwd6D4Q=";
+        rev = "5.0.3";
+        hash = "sha256-lrO/H6QCqE4QWgSp5iuBf2SZIQo0fPwv+U/NqYQDqgo=";
       };
       description = "Source path to ResoniteModLoader.";
     };
