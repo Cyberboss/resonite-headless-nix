@@ -318,19 +318,17 @@ let
     else
       "")}
 
-    ${
-      if cfg.engine-config != null then
-        "ENGINE_CONFIG=${cfg.engine-config}"
-      else
-        (if cfg.quic-wan-ip-file != null then ''
-          WAN_IP=$(tr -d '[:space:]' < "${cfg.quic-wan-ip-file}")
-          ENGINE_CONFIG=${working-directory}/EngineConfig.json
-          ${
-            lib.getExe pkgs.jq
-          } -n --arg ip "$WAN_IP" '{quicConfig: {publicIP: $ip}}' > $ENGINE_CONFIG
-        '' else
-          "")
-    }
+    ${if cfg.engine-config != null then
+      "ENGINE_CONFIG=${cfg.engine-config}"
+    else
+      (if cfg.quic-wan-ip-file != null then ''
+        WAN_IP=$(tr -d '[:space:]' < "${cfg.quic-wan-ip-file}")
+        ENGINE_CONFIG=${working-directory}/EngineConfig.json
+        ${
+          lib.getExe pkgs.jq
+        } -n --arg ip "$WAN_IP" '{quicConfig: {publicIP: $ip}}' > $ENGINE_CONFIG
+      '' else
+        "")}
 
     exec ${
       lib.getExe cfg.dotnet.runtime
@@ -342,6 +340,11 @@ let
     }${
       if cfg.engine-config != null || cfg.quic-wan-ip-file != null then
         " -EngineConfig $ENGINE_CONFIG"
+      else
+        ""
+    }${
+      if cfg.use-cloudflare-proxy then
+        " -CloudProfile StagingCloudflare"
       else
         ""
     }
@@ -455,13 +458,15 @@ in {
     engine-config = lib.mkOption {
       type = lib.types.nullOr lib.types.path;
       default = null;
-      description = "Path used to set the `-EngineConfig` parameter, if present. If set, this overwrites the generated engine config for quic-wan-ip-file";
+      description =
+        "Path used to set the `-EngineConfig` parameter, if present. If set, this overwrites the generated engine config for quic-wan-ip-file";
     };
 
     quic-wan-ip-file = lib.mkOption {
       type = lib.types.nonEmptyStr;
       default = null;
-      description = "Path containing the WAN IP used to configure the QUIC engine config. No effect if engine-config is set.";
+      description =
+        "Path containing the WAN IP used to configure the QUIC engine config. No effect if engine-config is set.";
     };
 
     dotnet = lib.mkOption {
@@ -516,6 +521,9 @@ in {
         Additional restart triggers for the systemd service
       '';
     };
+
+    use-cloudflare-proxy =
+      lib.mkEnableOption "Use the 'StagingCloudflare' cloud profile.";
   };
 
   config = {
