@@ -359,6 +359,8 @@ let
   });
 in {
   options.services.${service-name} = {
+    enable = lib.mkEnableOption "Resonite auto-updating headless service";
+
     username = lib.mkOption {
       type = lib.types.nonEmptyStr;
       default = service-name;
@@ -526,7 +528,7 @@ in {
       lib.mkEnableOption "Use the 'StagingCloudflare' cloud profile.";
   };
 
-  config = {
+  config = lib.mkIf cfg.enable {
     users = {
       groups."${cfg.groupname}" = { };
       users."${cfg.username}" = {
