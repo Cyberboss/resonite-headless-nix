@@ -471,8 +471,8 @@ in {
 
     dotnet = lib.mkOption {
       type = lib.types.anything;
-      default = pkgs.dotnetCorePackages.dotnet_10;
-      example = lib.literalExpression "pkgs.dotnetCorePackages.dotnet_10";
+      default = pkgs.dotnetCorePackages.dotnet_11;
+      example = lib.literalExpression "pkgs.dotnetCorePackages.dotnet_11";
       description =
         "The dotnet version set to use for building mods and running Resonite.";
     };
