@@ -92,8 +92,13 @@ let
             cp -r ${mod-definition.src}/. $SOURCE_DIR/
             chmod -R 777 $SOURCE_DIR
             pushd $SOURCE_DIR
-            ${mod-definition.environment-statement headless-directory} ${
-              lib.getExe cfg.dotnet.sdk
+            ${
+              mod-definition.environment-statement headless-directory
+            } ${
+              lib.getExe (if mod-definition.dotnet != null then
+                mod-definition.dotnet
+              else
+                cfg.dotnet).sdk
             } publish -o $PUBLISH_DIR /nowarn:NETSDK1194
 
             mkdir -p ${mod-hashed-dir}
@@ -499,6 +504,14 @@ in {
               ''headless-directory: "HeadlessPath=''${headless-directory}"'';
             description =
               "A function taking the full path to the resonite headless binary directory and returning a pre-command environment set string to use for building the mod";
+          };
+
+          dotnet = lib.mkOption {
+            type = lib.types.anything;
+            default = null;
+            example = lib.literalExpression "pkgs.dotnetCorePackages.dotnet_11";
+            description =
+              "The dotnet version override to use for building this specific mod if not the default.";
           };
         };
       }));
