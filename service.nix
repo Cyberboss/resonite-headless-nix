@@ -42,7 +42,13 @@ let
 
   rml-build-dir = "${mod-builds-cache-directory}/${rml-hash}";
 
-  rml-hash = builtins.hashString "sha256" "ResoniteModLoader ${cfg.rml-source}";
+  rml-hash = builtins.hashString "sha256"
+    "ResoniteModLoader ${cfg.rml-source} ${
+      if cfg.harmony-override != null then
+        cfg.harmony-override
+      else
+        "DEFAULT HARMONY"
+    }";
 
   build-rml-mods = if cfg.enable-rml then
     (lib.concatStringsSep "\n" ([''
@@ -63,7 +69,13 @@ let
         rm -rf ${mod-builds-cache-directory}
         mkdir -p ${rml-build-dir}/
         mv $PUBLISH_DIR/ResoniteModLoader.dll ${rml-build-dir}/
-        mv $PUBLISH_DIR/0Harmony.dll ${rml-build-dir}/
+
+        ${
+          if cfg.harmony-override != null then
+            "cp ${cfg.harmony-override} ${rml-build-dir}/0Harmony.dll"
+          else
+            "mv $PUBLISH_DIR/0Harmony.dll ${rml-build-dir}/"
+        }
 
         popd
         rm -rf "$PUBLISH_DIR" "$SOURCE_DIR"
@@ -432,6 +444,14 @@ in {
       default = false;
       description = ''
         Whether to enable ResoniteModLoader.
+      '';
+    };
+
+    harmony-override = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = false;
+      description = ''
+        Optional path to a 0Harmony.dll to use in place of RML's.
       '';
     };
 
